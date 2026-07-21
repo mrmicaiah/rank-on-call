@@ -82,6 +82,24 @@ The content catches the pain. The report converts it. That's the whole machine.
 
 **Cannibalization note:** this content competes in Sites On Call's own keyword pool. The two sites must **cross-link and reinforce each other**, not compete. Treat them as one funnel with two doors — symptom content into Rank On Call, "just fix it for me" traffic into Sites On Call.
 
+### The lane split — Sites On Call teaches, Rank On Call diagnoses
+
+Sites On Call already runs a mature content engine (~22 published articles as of July 2026) that ranks across most of the same keyword pool Rank On Call targets — contractor SEO, contractor leads, "why isn't my business showing up on Google," GBP/NAP mechanics, the free-leads trap. Rank On Call must NOT mirror those topics head-on, or the two sites compete for the same searches and split their own authority.
+
+The resolution: **the two sites own different intent in the same keyword pool, divided by what each sells.**
+
+- **Sites On Call = teach / fix.** It sells the website, so its content answers *"how does this work / how do I fix it"* — playbooks, guides, "how Google decides who to show." This is what its existing library already does.
+- **Rank On Call = diagnose.** It sells the $39 diagnosis, so its content answers *"is MY site broken — show me what's wrong with mine, specifically."* Not "how does local SEO work" (SOC owns that), but "find out what's wrong with your online presence right now" → the Deep Dive.
+
+Same symptom, different verb. SOC's article ends in knowledge; Rank On Call's ends in *your specific problem, for $39.*
+
+**The cross-link is the mechanism, not a courtesy:**
+
+- SOC teaching article → *"want to know if this is happening to YOU? → Rank On Call Deep Dive"*
+- Rank On Call diagnosis → *"want someone to just fix all this? → sitesoncall.com"*
+
+Two doors, one funnel. Every Rank On Call article must be written in the diagnostic lane and must cross-link to the relevant SOC teaching article where one exists.
+
 ---
 
 ## The Product & Proof (the "Rob" cold test)
@@ -218,6 +236,7 @@ The order below is the **safe** order. Each phase de-risks the next.
 | 2026-07-21 | Funnel = **symptom-keyword content + $39 report CTA**, **NO city pages** | Tested against real keyword data; product-name searches return 0 results |
 | 2026-07-21 | **Google Places API skill = deferred** | Post-launch; the report works without it |
 | 2026-07-21 | **Launch = manual human insight pass**, automation last | Wrong-business verification must precede any auto-delivery |
+| 2026-07-21 | **Lane split: SOC teaches/fixes, Rank On Call diagnoses** | Resolves cannibalization — same keyword pool, different intent, mutual cross-linking. SOC has ~22 articles already ranking; do not mirror them head-on. |
 
 ---
 
