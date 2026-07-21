@@ -22,7 +22,7 @@ Rank On Call sells a paid business-intelligence audit — the "Deep Dive" report
 | Model | Self-serve paid report. National — no geographic tether. Never meets the customer. |
 | Owner | Irene |
 | Sister business | Sites On Call — the high-ticket back end (websites + SEO) |
-| Domain | rankoncall.com |
+| Domain | rankoncall.com — purchased, registrar GoDaddy (DNS → GitHub Pages at launch) |
 | Repo | `mrmicaiah/rank-on-call` |
 | Price | $39 intro / $249 stated anchor value / limited-time through end of September |
 | The Product Engine | The existing `web-deep-dive` skill in the Productivity MCP |
@@ -215,8 +215,8 @@ Carried over from the sister project and this session. These were paid for once 
 
 The order below is the **safe** order. Each phase de-risks the next.
 
-- [x] **Phase 0 — Foundation.** Repo created ✓. This master doc ✓. Brand *chosen* (Rank On Call). Domain rankoncall.com available but **not yet purchased**; trademark check pending — see *Open Items*.
-- [ ] **Phase 1 — Verify demand / keywords.** Fresh keyword + difficulty research to pin the specific pain-symptom clusters to target. **Verify SEO-Scout balance first** (see *Scars*).
+- [x] **Phase 0 — Foundation.** Repo created ✓. This master doc ✓. Brand chosen (Rank On Call) ✓. Domain rankoncall.com **purchased** (registrar GoDaddy) ✓. **Trademark cleared** ✓. Foundation complete.
+- [ ] **Phase 1 — Verify demand / keywords.** (a) Check keyword targets against `docs/SOC_CONTENT_INVENTORY.md` to avoid head-on collisions with SOC's existing library, then (b) run fresh keyword + difficulty research to pin the specific pain-symptom clusters to target. **Verify SEO-Scout balance first** (see *Scars*).
 - [ ] **Phase 2 — Build the sample report.** Run a real Rob-style deep dive, then scrub business-specific data to "Sample/Test."
 - [ ] **Phase 3 — Stand up the site.** 11ty: content architecture + intake form + sample report + Sites On Call cross-links + pricing page.
 - [ ] **Phase 4 — Manual fulfillment first.** Human insight pass on every report + a delivery email that includes a **Google review link** → this is the review flywheel that earns permission for the price ramp.
@@ -231,7 +231,7 @@ The order below is the **safe** order. Each phase de-risks the next.
 
 | Date | Decision | Notes |
 |---|---|---|
-| 2026-07-21 | Brand = **Rank On Call** | Domain rankoncall.com; sibling to Sites On Call; trademark check pending |
+| 2026-07-21 | Brand = **Rank On Call** | Domain rankoncall.com purchased (registrar GoDaddy); trademark cleared. Sibling to Sites On Call. |
 | 2026-07-21 | Stack = **11ty / Nunjucks + GitHub Pages** | Reuse the sister-site pattern; no `split` filter in Nunjucks |
 | 2026-07-21 | Funnel = **symptom-keyword content + $39 report CTA**, **NO city pages** | Tested against real keyword data; product-name searches return 0 results |
 | 2026-07-21 | **Google Places API skill = deferred** | Post-launch; the report works without it |
@@ -242,8 +242,6 @@ The order below is the **safe** order. Each phase de-risks the next.
 
 ## Open Items (blocking / to confirm)
 
-- [ ] **Trademark check on "Rank On Call"** — confirm before the brand is load-bearing.
-- [ ] **Register rankoncall.com** — available as of 2026-07-21 but not yet purchased; grab it once the trademark check clears.
 - [ ] **Which specific pain-symptom keyword clusters to target** — needs Phase 1 research.
 - [ ] **Business email** for the review-request + delivery flow — `[TBD]`
 - [ ] **Stripe account setup** — later phase (Phase 5).
@@ -256,7 +254,8 @@ The order below is the **safe** order. Each phase de-risks the next.
 | File | Status |
 |---|---|
 | `docs/PROJECT_MASTER.md` | **This document — read first.** |
+| `docs/SEO_CONTENT_ARCHITECTURE.md` | ✓ Created — keyword pyramid + 3 diagnostic hubs, 18 article ideas. |
+| `docs/SOC_CONTENT_INVENTORY.md` | SOC's ~22 articles — cross-link targets + collision check. |
 | Site build spec | `[to be created]` |
-| SEO content architecture | `[to be created]` |
 | Launch marketing plan | `[to be created]` |
 | Execution checklist | `[to be created]` |
