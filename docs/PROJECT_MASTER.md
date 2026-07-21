@@ -195,7 +195,9 @@ Fixes, in order:
 
 **Do NOT build a raw Google Maps scraper.** It violates ToS and it breaks silently — which is the worst failure mode for something feeding a paid deliverable.
 
-**The Places API skill is DEFERRED to AFTER the site is built and running.** The report works without it. It is an enhancement, not a blocker.
+**The Places API skill is now a PRE-LAUNCH GATE — see `docs/SITE_BUILD_SPEC.md`.** The verified GBP rating and review count is a real, designed field in the report, not a placeholder, so the skill must be built and populated **before** the site goes live. The site does not launch with "pending verification" wording anywhere. **[OWNER ACTION]** the Google Cloud project + Places API key is a prerequisite only the owner can create (~15 min) — start it early, it blocks the gate.
+
+*(This reverses the earlier decision to defer it to post-launch. The build spec is authoritative.)*
 
 ---
 
@@ -217,8 +219,8 @@ The order below is the **safe** order. Each phase de-risks the next.
 
 - [x] **Phase 0 — Foundation.** Repo created ✓. This master doc ✓. Brand chosen (Rank On Call) ✓. Domain rankoncall.com **purchased** (registrar GoDaddy) ✓. **Trademark cleared** ✓. Foundation complete.
 - [ ] **Phase 1 — Verify demand / keywords.** (a) Check keyword targets against `docs/SOC_CONTENT_INVENTORY.md` to avoid head-on collisions with SOC's existing library, then (b) run fresh keyword + difficulty research to pin the specific pain-symptom clusters to target. **Verify SEO-Scout balance first** (see *Scars*).
-- [ ] **Phase 2 — Build the sample report.** Run a real Rob-style deep dive, then scrub business-specific data to "Sample/Test."
-- [ ] **Phase 3 — Stand up the site.** 11ty: content architecture + intake form + sample report + Sites On Call cross-links + pricing page.
+- [x] **Phase 2 — Build the sample report.** ✓ Side-by-side scrubbed sample created (`samples/sample-deep-dive-comparison.md`).
+- [ ] **Phase 3 — Stand up the site.** 11ty: content architecture + intake form + sample report + Sites On Call cross-links + pricing page. Full plan in `docs/SITE_BUILD_SPEC.md`. **Includes a pre-launch gate:** the Places API skill must be built and real GBP figures populated *before* go-live.
 - [ ] **Phase 4 — Manual fulfillment first.** Human insight pass on every report + a delivery email that includes a **Google review link** → this is the review flywheel that earns permission for the price ramp.
 - [ ] **Phase 5 — Add Stripe self-serve.**
 - [ ] **Phase 6 — Automate delivery LAST**, and only **WITH** the wrong-business safeguard in place.
@@ -234,9 +236,10 @@ The order below is the **safe** order. Each phase de-risks the next.
 | 2026-07-21 | Brand = **Rank On Call** | Domain rankoncall.com purchased (registrar GoDaddy); trademark cleared. Sibling to Sites On Call. |
 | 2026-07-21 | Stack = **11ty / Nunjucks + GitHub Pages** | Reuse the sister-site pattern; no `split` filter in Nunjucks |
 | 2026-07-21 | Funnel = **symptom-keyword content + $39 report CTA**, **NO city pages** | Tested against real keyword data; product-name searches return 0 results |
-| 2026-07-21 | **Google Places API skill = deferred** | Post-launch; the report works without it |
+| 2026-07-21 | **Google Places API skill = deferred** | ~~Post-launch; the report works without it~~ **SUPERSEDED same day — see the pre-launch-gate row below.** |
 | 2026-07-21 | **Launch = manual human insight pass**, automation last | Wrong-business verification must precede any auto-delivery |
 | 2026-07-21 | **Lane split: SOC teaches/fixes, Rank On Call diagnoses** | Resolves cannibalization — same keyword pool, different intent, mutual cross-linking. SOC has ~22 articles already ranking; do not mirror them head-on. |
+| 2026-07-21 | Places API skill = **pre-launch gate**, not post-launch | GBP rating is a real report field; site won't launch with "pending" wording. Requires owner's Google Cloud key. |
 
 ---
 
@@ -256,6 +259,7 @@ The order below is the **safe** order. Each phase de-risks the next.
 | `docs/PROJECT_MASTER.md` | **This document — read first.** |
 | `docs/SEO_CONTENT_ARCHITECTURE.md` | ✓ Created — keyword pyramid + 3 diagnostic hubs, 18 article ideas. |
 | `docs/SOC_CONTENT_INVENTORY.md` | SOC's ~22 articles — cross-link targets + collision check. |
-| Site build spec | `[to be created]` |
+| `samples/sample-deep-dive-comparison.md` | Scrubbed side-by-side sample Deep Dive — the site's sales centerpiece. |
+| `docs/SITE_BUILD_SPEC.md` | Phase 3 build plan — site structure, intake form, CTA include, Places API gate. |
 | Launch marketing plan | `[to be created]` |
 | Execution checklist | `[to be created]` |

@@ -51,9 +51,9 @@ The irony for Company A: it isn't a cheap or amateur site — it's a professiona
 | Rating shown on own site | 5.0 (self-reported) | 4.7★ |
 | Review count shown | "70+" (self-reported) | 240+ verified |
 | Substantiation | Number stated on own site; not independently shown | Named review quotes, per-project detail, third-party review integration |
-| Verified Google Business Profile rating | `[GBP rating — pending verification]` | `[GBP rating — pending verification]` |
+| Verified Google Business Profile rating | `[GBP verified rating — populated at launch]` | `[GBP verified rating — populated at launch]` |
 
-**A note on the review numbers:** the ratings above are what each business displays on its *own* website. The single most important number — the live Google Business Profile rating and review count as Google itself reports it — is shown as *pending verification* in this sample. Confirming that number directly is a capability being added to the Deep Dive; when it's live, this row shows the real, Google-verified figure. For now, treat self-reported review counts as claims, not confirmed facts — which is exactly why independent verification matters.
+**A note on the review numbers:** the ratings above are what each business displays on its *own* website. The single most important number — the live Google Business Profile rating and review count as Google itself reports it — is pulled directly from Google's official Places API and populated before the report is delivered. The self-reported numbers shown here are included for contrast; the live report shows the Google-verified figure. Treat self-reported review counts as claims, not confirmed facts — which is exactly why independent verification matters.
 
 ### NAP consistency (Name / Address / Phone)
 
