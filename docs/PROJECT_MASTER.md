@@ -197,7 +197,7 @@ Carried over from the sister project and this session. These were paid for once 
 
 The order below is the **safe** order. Each phase de-risks the next.
 
-- [x] **Phase 0 — Foundation.** Repo created ✓. This master doc ✓. Brand + domain confirmed (trademark check still pending — see *Open Items*).
+- [x] **Phase 0 — Foundation.** Repo created ✓. This master doc ✓. Brand *chosen* (Rank On Call). Domain rankoncall.com available but **not yet purchased**; trademark check pending — see *Open Items*.
 - [ ] **Phase 1 — Verify demand / keywords.** Fresh keyword + difficulty research to pin the specific pain-symptom clusters to target. **Verify SEO-Scout balance first** (see *Scars*).
 - [ ] **Phase 2 — Build the sample report.** Run a real Rob-style deep dive, then scrub business-specific data to "Sample/Test."
 - [ ] **Phase 3 — Stand up the site.** 11ty: content architecture + intake form + sample report + Sites On Call cross-links + pricing page.
@@ -224,6 +224,7 @@ The order below is the **safe** order. Each phase de-risks the next.
 ## Open Items (blocking / to confirm)
 
 - [ ] **Trademark check on "Rank On Call"** — confirm before the brand is load-bearing.
+- [ ] **Register rankoncall.com** — available as of 2026-07-21 but not yet purchased; grab it once the trademark check clears.
 - [ ] **Which specific pain-symptom keyword clusters to target** — needs Phase 1 research.
 - [ ] **Business email** for the review-request + delivery flow — `[TBD]`
 - [ ] **Stripe account setup** — later phase (Phase 5).
