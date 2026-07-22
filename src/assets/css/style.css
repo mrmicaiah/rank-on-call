@@ -11,7 +11,11 @@
   /* --- Color ---
      HARD RULE: accent is accent ONLY, never a background fill. */
   --color-accent: #1e40af;      /* royal blue — buttons, labels, wordmark span,
-                                   hero italic phrase, step numbers, pricing border */
+                                   step numbers, pricing border. LIGHT BACKGROUNDS ONLY
+                                   for text — 2.2:1 on ink fails WCAG. */
+  --color-accent-light: #60a5fa; /* accent TEXT on dark backgrounds ONLY
+                                   (7.4:1 on ink, 6.9:1 on navy). Never a fill,
+                                   never on light backgrounds. */
   --color-ink: #0f1114;         /* near-black — hero, footer, nav CTA bg */
   --color-navy-deep: #0c1836;   /* deep navy — "See It First" band ONLY */
   --color-bg: #ffffff;          /* light sections */
@@ -164,10 +168,15 @@ img {
   text-align: center;
 }
 
-/* Footer wordmark sits on ink, so "Rank On" flips to light; span stays accent */
+/* Footer wordmark sits on ink: "Rank On" flips to light, and the "Call" span
+   uses accent-light (plain accent is 2.2:1 on ink — WCAG fail) */
 .wordmark--footer {
   color: var(--color-bg);
   margin: 0 0 1rem;
+}
+
+.wordmark--footer span {
+  color: var(--color-accent-light);
 }
 
 .site-footer__sister {
@@ -246,10 +255,11 @@ img {
   margin-bottom: 1.5rem;
 }
 
-/* The italic accent phrase — italic via DM Serif Display's ital axis */
+/* The italic accent phrase — italic via DM Serif Display's ital axis.
+   accent-light: this text sits on ink (WCAG — see token comment). */
 .hero__phrase {
   font-style: italic;
-  color: var(--color-accent);
+  color: var(--color-accent-light);
 }
 
 .hero__sub {

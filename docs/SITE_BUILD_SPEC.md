@@ -47,13 +47,15 @@ Text only — **no image asset.** Markup: `Rank On <span>Call</span>`
 
 - DM Serif Display, `letter-spacing: -0.02em`
 - "Rank On" = ink `#0f1114`. "Call" (the span) = accent `#1e40af`.
+- On dark backgrounds (footer): "Rank On" flips to light, and the span uses the dark-bg accent `#60a5fa` (see Color — WCAG).
 - Mirrors SOC's `Sites On <span>Call</span>` pattern exactly — this is the deliberate sibling signal.
 
 ### Color
 
 | Role | Hex | Rules |
 |---|---|---|
-| Accent | `#1e40af` (royal blue) | **HARD RULE: accent ONLY, NEVER a background fill.** Permitted uses: buttons, labels, wordmark span, hero italic phrase, step numbers, pricing card border. A saturated-blue background panel was tested and **REJECTED** — it reads spammy. Do not reintroduce it. |
+| Accent | `#1e40af` (royal blue) | **HARD RULE: accent ONLY, NEVER a background fill.** Permitted uses: buttons, labels, wordmark span, hero italic phrase, step numbers, pricing card border. A saturated-blue background panel was tested and **REJECTED** — it reads spammy. Do not reintroduce it. **Second hard rule: as TEXT, `#1e40af` is for light backgrounds only** — it measures ~2.2:1 on the dark backgrounds, a WCAG failure. |
+| Accent — dark-bg text | `#60a5fa` | **Accent-colored TEXT on dark backgrounds ONLY** (hero italic phrase on ink, footer wordmark span). Measured 7.4:1 on `#0f1114` and 6.9:1 on `#0c1836` — clears WCAG AA normal-text (4.5:1). Never a fill, never on light backgrounds; the accent-never-a-background rule applies to both tokens. |
 | Dark bg (near-black) | `#0f1114` | Hero, footer. |
 | Dark bg (deep navy) | `#0c1836` | **"See It First" band only.** |
 | Light sections | `#ffffff` and `#fbfbfc` | Cool neutrals. Explicitly **NOT SOC's warm cream** — do not port SOC's neutral palette. |

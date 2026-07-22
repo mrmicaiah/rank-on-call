@@ -21,6 +21,7 @@
 - [ ] **`ctaHref` default `/deep-dive/`** in `src/_includes/deep-dive-cta.njk` — resolve at build step 6.
 - [ ] **Nav CTA href `/deep-dive/`** in `src/_includes/base.njk` — resolve at build step 6, **must match the above** (both are comment-marked `PLACEHOLDER` in-file).
 - [ ] **Hardcoded copyright year** (`© 2026`) in `src/_includes/base.njk` footer — replace with a computed date filter.
+- [ ] **`/sample/` href placeholder** — used in the hero nudge link and the See It First button in `src/index.njk`. No slug pinned in any doc. Resolve at build step 4 (sample report page); must match whatever that page's permalink becomes.
 
 *(Repo-wide grep for `PLACEHOLDER`/`TODO`/`FIXME` on 2026-07-22 surfaced only the two `/deep-dive/` href markers above — no others exist in `src/` or `docs/`.)*
 
