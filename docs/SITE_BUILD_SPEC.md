@@ -28,31 +28,73 @@ This is the build plan for **rankoncall.com** — an 11ty static site whose enti
 
 ---
 
-## Design direction
+## Design System (LOCKED)
 
-**Palette — locked from an approved homepage mock.** Deep, premium royal blue:
+> Reconciliation against the SOC repo is **done**. The system below is locked — a builder writes the stylesheet from this section alone, zero guessing.
 
-| Role | Hex |
+### Typography
+
+| Role | Face | Details |
+|---|---|---|
+| Display | **DM Serif Display** | ital axis `0;1`. Used for headlines, wordmark, prices, step numbers. **Nothing else.** |
+| Body/UI | **Outfit** | weights 300–700. All body copy, nav, buttons, labels. |
+
+Source: **Google Fonts**, same loading pattern as Sites On Call.
+
+### Wordmark
+
+Text only — **no image asset.** Markup: `Rank On <span>Call</span>`
+
+- DM Serif Display, `letter-spacing: -0.02em`
+- "Rank On" = ink `#0f1114`. "Call" (the span) = accent `#1e40af`.
+- Mirrors SOC's `Sites On <span>Call</span>` pattern exactly — this is the deliberate sibling signal.
+
+### Color
+
+| Role | Hex | Rules |
+|---|---|---|
+| Accent | `#1e40af` (royal blue) | **HARD RULE: accent ONLY, NEVER a background fill.** Permitted uses: buttons, labels, wordmark span, hero italic phrase, step numbers, pricing card border. A saturated-blue background panel was tested and **REJECTED** — it reads spammy. Do not reintroduce it. |
+| Dark bg (near-black) | `#0f1114` | Hero, footer. |
+| Dark bg (deep navy) | `#0c1836` | **"See It First" band only.** |
+| Light sections | `#ffffff` and `#fbfbfc` | Cool neutrals. Explicitly **NOT SOC's warm cream** — do not port SOC's neutral palette. |
+
+### Buttons
+
+- Default: `border-radius: 8px; padding: 0.85rem 2rem; font-weight: 600;`
+- Nav CTA variant: `background: #0f1114` (ink), `border-radius: 6px`.
+- Build these cleanly with normal specificity. SOC's nav CTA uses six `!important` declarations — do **NOT** replicate that.
+
+### Spacing / layout
+
+| Token | Value |
 |---|---|
-| Primary | `#1E3A8A` / `#1E40AF` |
-| Lighter accent | `#1D4ED8` |
-| Near-navy footer | `#0F2461` |
+| Section padding | `section { padding: 6rem 2rem }` |
+| Container — wide | `1200px` |
+| Container — default | `1100px` |
+| Container — prose/narrow | `720px` |
+| Nav height | `72px` |
 
-> **NOTE — not yet done:** exact **fonts, button radius, and spacing** must be reconciled against the Sites On Call repo's real CSS (`mrmicaiah/sites-on-call`) so Rank On Call reads as a **true visual sibling**, not a lookalike. This reconciliation is a **build-time step** and is the first item in the build sequence below.
+### Strategic rationale (Option B)
 
-**Brand mark:** a simple wordmark — "Rank On Call" — matching SOC's wordmark restraint, set in the SOC typeface once reconciled, in royal blue. No logo illustration.
+Rank On Call is a **standalone brand** that must survive independently of Sites On Call. Sibling signal comes from shared **typography + wordmark structure + spacing** — **NOT** shared color. Note for the record: SOC's brand color is **terracotta `#c45d3e`, not green**; an earlier assumption in this project was wrong and has been corrected.
 
-### Section flow
+### Explicit NON-inheritance from SOC (three known defects — do not carry them over)
 
-From the approved mock, mirroring SOC's proven structure:
+1. **Accessibility:** SOC has no `:focus` or `:active` states anywhere. Rank On Call ships `:focus-visible` states on **every** interactive element from day one.
+2. **Specificity:** SOC's nav CTA relies on six `!important` hacks. Build ours with clean cascade.
+3. **Assets:** SOC's favicons live on a shared Cloudinary account, which caused a documented broken-image incident. Rank On Call hosts its favicon **AND** OG image **in-repo** from the start. No external CDN for brand assets.
 
-1. **Sticky header** — wordmark + nav + "Get My Deep Dive" CTA
-2. **Royal hero** — symptom headline *"Why can't people find you on Google?"*, subhead, $39/$249 CTA, and a "see a sample" nudge
-3. **Problem** — 3 cards: *three addresses* / *a competitor above you* / *site says "0 jobs"*
-4. **How It Works** — 3 numbered steps: *tell us your business* → *we dig into everything* → *you get the report*
-5. **Sample hook** — the two-company side-by-side, "read the sample" CTA
-6. **Pricing** — $39 intro, $249 anchor, September urgency, single card, **no subscription**
-7. **Footer** — wordmark + "sister company of Sites On Call"
+### Approved homepage structure (mock v4)
+
+Section order, top to bottom:
+
+1. **Header** — nav, 72px, wordmark left, ink CTA right
+2. **Hero** — near-black `#0f1114`, DM Serif Display headline containing the italic accent-blue phrase *"Why can't people find you on Google?"*
+3. **Problem** — 3 cards, light background
+4. **How It Works** — 3 steps, serif numerals in accent blue
+5. **"See It First"** sample-hook band — deep navy `#0c1836`
+6. **Pricing** — single card, accent-blue border
+7. **Footer** — near-black `#0f1114`
 
 Note the hero headline is a **symptom** in the contractor's own words, not a product description — that is the whole funnel thesis, applied to the front door.
 
@@ -179,7 +221,7 @@ Header and footer link to **sitesoncall.com**. The two sites **reinforce, they d
 9. **PRE-LAUNCH GATE** — build + connect the Places API skill, populate real GBP figures (including the sample), confirm **no "pending" wording remains** anywhere.
 10. **Go live.**
 
-Note that the CTA include lands at step 2, before any page that uses it. That ordering is deliberate — it is the one decision that gets expensive if deferred.
+> **BUILD-ORDER NOTE (CTA include):** `_includes/deep-dive-cta.njk` must be created at **step 2**, before any page that consumes it. The CTA is a **reusable include, not copy-pasted markup.** That ordering is deliberate — it is the one decision that gets expensive if deferred.
 
 ---
 
@@ -187,7 +229,7 @@ Note that the CTA include lands at step 2, before any page that uses it. That or
 
 - [ ] **Form backend** — Courier vs. other. Decide at form-build time (step 6).
 - [ ] **Stripe integration** — later phase (Phase 5 in the master roadmap), not Phase 3.
-- [ ] **Design-token reconciliation** against the SOC repo — pending, and it's step 1.
+- [x] **Design-token reconciliation** against the SOC repo — **DONE.** Locked in the *Design System (LOCKED)* section above.
 - [ ] **Google Cloud / Places API key** — **OWNER ACTION. Start early.** Blocks the pre-launch gate.
 
 ---
