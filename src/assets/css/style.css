@@ -64,3 +64,107 @@ img {
   max-width: 100%;
   display: block;
 }
+
+/* ==========================================================================
+   Component: Deep Dive CTA  (src/_includes/deep-dive-cta.njk)
+   Tokens only — no raw hex values in component styles.
+   ========================================================================== */
+
+.deep-dive-cta {
+  padding: var(--section-padding);
+}
+
+.deep-dive-cta__inner {
+  max-width: var(--container-narrow);
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* Variants — accent is NEVER the section background (hard rule) */
+.deep-dive-cta--light {
+  background: var(--color-bg-alt);
+  color: var(--color-ink);
+}
+
+.deep-dive-cta--dark {
+  background: var(--color-ink);
+  color: var(--color-bg);
+}
+
+.deep-dive-cta__heading {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.deep-dive-cta__body {
+  margin: 0 auto 1.5rem;
+  line-height: 1.6;
+}
+
+/* Prices are display-face territory per the locked type rules */
+.deep-dive-cta__price {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  margin: 0 0 1.75rem;
+}
+
+.deep-dive-cta__price-anchor {
+  opacity: 0.55;
+  font-size: 1.25rem;
+  margin: 0 0.25rem;
+}
+
+.deep-dive-cta__urgency {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.deep-dive-cta__button {
+  display: inline-block;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border-radius: var(--radius-button);
+  padding: 0.85rem 2rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.deep-dive-cta__button:hover {
+  filter: brightness(1.15);
+}
+
+/* :focus-visible on every interactive element — non-negotiable
+   (spec: non-inheritance rule #1; SOC ships none, we do not repeat that) */
+.deep-dive-cta__button:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+.deep-dive-cta--dark .deep-dive-cta__button:focus-visible {
+  outline-color: var(--color-bg);
+}
+
+.deep-dive-cta__crosslink {
+  margin-top: 2rem;
+  font-size: 0.95rem;
+}
+
+.deep-dive-cta__crosslink a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.deep-dive-cta--dark .deep-dive-cta__crosslink a {
+  color: var(--color-bg);
+}
+
+.deep-dive-cta__crosslink a:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+.deep-dive-cta--dark .deep-dive-cta__crosslink a:focus-visible {
+  outline-color: var(--color-bg);
+}
