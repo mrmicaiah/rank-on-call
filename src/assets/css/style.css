@@ -191,6 +191,241 @@ img {
 }
 
 /* ==========================================================================
+   Homepage sections  (src/index.njk) — mock v4 order.
+   Tokens only, zero new hex, zero !important. Breakpoint: 720px.
+   ========================================================================== */
+
+/* Shared primary button — accent fill (accent as fill is permitted; bg is not) */
+.button {
+  display: inline-block;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border-radius: var(--radius-button);
+  padding: 0.85rem 2rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button:hover {
+  filter: brightness(1.15);
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+/* On dark sections the ink outline vanishes — flip it light */
+.hero .button:focus-visible,
+.see-first .button:focus-visible {
+  outline-color: var(--color-bg);
+}
+
+.section-heading {
+  font-size: 2.25rem;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+/* 1. Hero — near-black */
+.hero {
+  background: var(--color-ink);
+  color: var(--color-bg);
+  padding: var(--section-padding);
+}
+
+.hero__inner {
+  max-width: var(--container-narrow);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero__headline {
+  font-size: 3rem;
+  line-height: 1.15;
+  margin-bottom: 1.5rem;
+}
+
+/* The italic accent phrase — italic via DM Serif Display's ital axis */
+.hero__phrase {
+  font-style: italic;
+  color: var(--color-accent);
+}
+
+.hero__sub {
+  font-weight: 300;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  margin: 0 auto 2.5rem;
+}
+
+.hero__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.hero__sample-link {
+  color: var(--color-bg);
+  text-decoration: underline;
+}
+
+.hero__sample-link:focus-visible {
+  outline: 2px solid var(--color-bg);
+  outline-offset: 2px;
+}
+
+/* 2. Problem — light alt */
+.problem {
+  background: var(--color-bg-alt);
+  padding: var(--section-padding);
+}
+
+.problem__inner {
+  max-width: var(--container-default);
+  margin: 0 auto;
+}
+
+.problem__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.card {
+  background: var(--color-bg);
+  border-radius: var(--radius-button);
+  padding: 2rem;
+}
+
+.card__title {
+  font-size: 1.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.card__body {
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* 3. How It Works — white, alternates from problem */
+.how {
+  background: var(--color-bg);
+  padding: var(--section-padding);
+}
+
+.how__inner {
+  max-width: var(--container-default);
+  margin: 0 auto;
+}
+
+.how__steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Serif numerals in accent — display face per locked type rules */
+.step__num {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  color: var(--color-accent);
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.step__title {
+  font-size: 1.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.step__body {
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* 4. See It First — the ONLY --color-navy-deep use */
+.see-first {
+  background: var(--color-navy-deep);
+  color: var(--color-bg);
+  padding: var(--section-padding);
+}
+
+.see-first__inner {
+  max-width: var(--container-narrow);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.see-first__heading {
+  margin-bottom: 1.5rem;
+}
+
+.see-first__body {
+  line-height: 1.6;
+  margin: 0 auto 2rem;
+}
+
+/* 5. Pricing — single card, accent BORDER only */
+.pricing {
+  background: var(--color-bg);
+  padding: var(--section-padding);
+}
+
+.pricing__inner {
+  max-width: var(--container-narrow);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.pricing-card {
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-button);
+  padding: 3rem 2.5rem;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.pricing-card__price {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  line-height: 1;
+  margin: 0 0 0.5rem;
+}
+
+.pricing-card__anchor {
+  font-size: 1.1rem;
+  opacity: 0.65;
+  margin: 0 0 0.5rem;
+}
+
+.pricing-card__urgency {
+  margin: 0 0 2rem;
+}
+
+/* Responsive — cards and steps stack below 720px */
+@media (max-width: 720px) {
+  .problem__cards,
+  .how__steps {
+    grid-template-columns: 1fr;
+  }
+
+  .hero__headline {
+    font-size: 2.25rem;
+  }
+
+  .section-heading {
+    font-size: 1.85rem;
+  }
+}
+
+/* ==========================================================================
    Component: Deep Dive CTA  (src/_includes/deep-dive-cta.njk)
    Tokens only — no raw hex values in component styles.
    ========================================================================== */

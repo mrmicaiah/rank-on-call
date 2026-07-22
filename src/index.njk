@@ -1,0 +1,88 @@
+---
+layout: base.njk
+---
+{# Homepage per mock v4 section order — SITE_BUILD_SPEC → Design System (LOCKED).
+   Hrefs /deep-dive/ and /sample/ are PLACEHOLDERs pending build steps 4 & 6. #}
+
+{# 1. HERO — near-black, symptom headline with the italic accent phrase #}
+<section class="hero">
+  <div class="hero__inner">
+    <h1 class="hero__headline">You do good work. You have the reviews. <span class="hero__phrase">Why can&rsquo;t people find you on Google?</span></h1>
+    <p class="hero__sub">The {{ offer.price }} Deep Dive digs into your listings, reviews, rankings, and website — using nothing but your business name and city — and shows you the specific, checkable things costing you calls.</p>
+    <div class="hero__actions">
+      <a class="button" href="/deep-dive/">Get your Deep Dive</a>
+      <a class="hero__sample-link" href="/sample/">See a real sample first &rarr;</a>
+    </div>
+  </div>
+</section>
+
+{# 2. PROBLEM — 3 cards, light #}
+<section class="problem">
+  <div class="problem__inner">
+    <h2 class="section-heading">What&rsquo;s quietly costing you calls</h2>
+    <div class="problem__cards">
+      <article class="card">
+        <h3 class="card__title">Three different addresses</h3>
+        <p class="card__body">Your listings don&rsquo;t agree — three addresses, three ZIP codes across the web. Google can&rsquo;t pin down your identity, so it shows a business it&rsquo;s sure about instead.</p>
+      </article>
+      <article class="card">
+        <h3 class="card__title">A competitor above you</h3>
+        <p class="card__body">The top of the page for your own service — sometimes the searchable version of your own name — belongs to someone else. Every customer who looks gets handed to them.</p>
+      </article>
+      <article class="card">
+        <h3 class="card__title">Your site says &ldquo;0 jobs&rdquo;</h3>
+        <p class="card__body">Broken counters render as &ldquo;0+ installs, 0+ reviews&rdquo; — your own homepage advertising that you&rsquo;ve completed nothing, to every visitor, all day.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+{# 3. HOW IT WORKS — 3 steps, serif numerals in accent #}
+<section class="how">
+  <div class="how__inner">
+    <h2 class="section-heading">How it works</h2>
+    <ol class="how__steps">
+      <li class="step">
+        <span class="step__num" aria-hidden="true">1</span>
+        <h3 class="step__title">Tell us your business</h3>
+        <p class="step__body">Name, city, website, phone — a 60-second form. No logins, no account access, ever.</p>
+      </li>
+      <li class="step">
+        <span class="step__num" aria-hidden="true">2</span>
+        <h3 class="step__title">We dig into everything</h3>
+        <p class="step__body">Listings, reviews, rankings, your website, your competitors — every finding real and checkable, pulled from what Google and your customers actually see.</p>
+      </li>
+      <li class="step">
+        <span class="step__num" aria-hidden="true">3</span>
+        <h3 class="step__title">You get the report</h3>
+        <p class="step__body">A written Deep Dive on your business: what&rsquo;s costing you calls, why, and what fixing it looks like.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+{# 4. SEE IT FIRST — deep navy band, the ONLY --color-navy-deep use #}
+<section class="see-first">
+  <div class="see-first__inner">
+    <h2 class="section-heading see-first__heading">See it first</h2>
+    <p class="see-first__body">We ran two real contractors through the Deep Dive — one with a neglected online presence, one polished and well-reviewed — and found real, money-costing problems on both. Read the actual report before you spend a dollar.</p>
+    <a class="button" href="/sample/">Read the sample report</a>
+  </div>
+</section>
+
+{# 5. PRICING — single card, accent BORDER (never fill/background) #}
+<section class="pricing">
+  <div class="pricing__inner">
+    <h2 class="section-heading">One report. No subscription.</h2>
+    <div class="pricing-card">
+      <p class="pricing-card__price">{{ offer.price }}</p>
+      <p class="pricing-card__anchor"><s>{{ offer.anchor }}</s> value</p>
+      <p class="pricing-card__urgency">Intro price {{ offer.urgency }}</p>
+      <a class="button" href="/deep-dive/">Get your Deep Dive</a>
+    </div>
+  </div>
+</section>
+
+{# 6. Closing CTA — dark variant reads cleanly into the ink footer #}
+{% set ctaVariant = "dark" %}
+{% include "deep-dive-cta.njk" %}

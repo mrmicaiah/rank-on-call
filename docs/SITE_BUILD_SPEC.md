@@ -230,7 +230,7 @@ Header and footer link to **sitesoncall.com**. The two sites **reinforce, they d
 - [ ] **Form backend** — Courier vs. other. Decide at form-build time (step 6).
 - [ ] **Stripe integration** — later phase (Phase 5 in the master roadmap), not Phase 3.
 - [x] **Design-token reconciliation** against the SOC repo — **DONE.** Locked in the *Design System (LOCKED)* section above.
-- [ ] **Google Cloud / Places API key** — **OWNER ACTION. Start early.** Blocks the pre-launch gate.
+- [x] **Google Cloud / Places API key** — **DONE 2026-07-22.** Key `rank-on-call-places-server` created, restricted to Places API (New); value lives in local `.env` (never committed — see `.env.example`). Remaining key work (application restriction, deploy-host env var) is tracked in `docs/PRE_LAUNCH_CHECKLIST.md`.
 
 ---
 

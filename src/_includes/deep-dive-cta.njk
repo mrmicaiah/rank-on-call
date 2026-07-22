@@ -1,8 +1,9 @@
 {#
   deep-dive-cta.njk — THE reusable Deep Dive CTA. Every article and page ends with this.
   Per docs/SITE_BUILD_SPEC.md → "The CTA — reusable include (locked decision)":
-  price, anchor, and urgency line live HERE and ONLY here — a one-file edit when
-  the price ramp ($39 → $69 → $99 → $249) or the September date moves.
+  price, anchor, and urgency live in ONE place — src/_data/offer.json — a
+  one-file edit when the price ramp ($39 → $69 → $99 → $249) or the September
+  date moves. Both this include and the homepage pricing card read from it.
   Do NOT parameterize the price/anchor/urgency — that would defeat the point.
 
   Optional variables (set before including; all have defaults):
@@ -19,9 +20,9 @@
     <h2 class="deep-dive-cta__heading">{{ ctaHeading | default("Want to know exactly what's costing you calls?") }}</h2>
     <p class="deep-dive-cta__body">{{ ctaBody | default("The Deep Dive finds the specific, checkable things costing you calls that you can't see from the inside — real findings on your business, not a template.") }}</p>
     <p class="deep-dive-cta__price">
-      <span class="deep-dive-cta__price-now">$39</span>
-      <s class="deep-dive-cta__price-anchor">$249</s>
-      <span class="deep-dive-cta__urgency">through end of September</span>
+      <span class="deep-dive-cta__price-now">{{ offer.price }}</span>
+      <s class="deep-dive-cta__price-anchor">{{ offer.anchor }}</s>
+      <span class="deep-dive-cta__urgency">{{ offer.urgency }}</span>
     </p>
     <a class="deep-dive-cta__button" href="{{ ctaHref | default("/deep-dive/") }}">{{ ctaButtonText | default("Get your Deep Dive") }}</a>
     <p class="deep-dive-cta__crosslink">Want someone to just fix all this? <a href="https://sitesoncall.com">sitesoncall.com</a></p>
