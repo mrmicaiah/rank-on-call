@@ -23,7 +23,7 @@ layout: base.njk
     <div class="problem__cards">
       <article class="card">
         <h3 class="card__title">Three different addresses</h3>
-        <p class="card__body">Your listings don&rsquo;t agree — three addresses, three ZIP codes across the web. Google can&rsquo;t pin down your identity, so it shows a business it&rsquo;s sure about instead.</p>
+        <p class="card__body">Your listings don&rsquo;t agree — three addresses, three ZIP codes across the web. Search engines can&rsquo;t pin down your identity, so they show a business they can be sure about instead.</p>
       </article>
       <article class="card">
         <h3 class="card__title">A competitor above you</h3>
@@ -50,7 +50,7 @@ layout: base.njk
       <li class="step">
         <span class="step__num" aria-hidden="true">2</span>
         <h3 class="step__title">We dig into everything</h3>
-        <p class="step__body">Listings, reviews, rankings, your website, your competitors — every finding real and checkable, pulled from what Google and your customers actually see.</p>
+        <p class="step__body">Listings, reviews, rankings, your website, your competitors — every finding real and checkable, pulled from what search engines and your customers actually see.</p>
       </li>
       <li class="step">
         <span class="step__num" aria-hidden="true">3</span>
@@ -58,6 +58,15 @@ layout: base.njk
         <p class="step__body">A written Deep Dive on your business: what&rsquo;s costing you calls, why, and what fixing it looks like.</p>
       </li>
     </ol>
+  </div>
+</section>
+
+{# 3b. RESEARCH — why $39 can be deep. Claim ceiling per PROJECT_MASTER: automated
+   research on public data, human pass on every report. No algorithm/monitoring claims. #}
+<section class="research">
+  <div class="research__inner">
+    <h2 class="research__hook">Search engines don&rsquo;t read your website the way people do. We built something that reads it the way they do.</h2>
+    <p class="research__body">A consultant charges hundreds because this takes a day of manual digging. AI does that digging in minutes — which is why a real, specific report on your business costs {{ offer.price }} instead of $500. And every report still gets human eyes before it ships.</p>
   </div>
 </section>
 
@@ -77,7 +86,7 @@ layout: base.njk
     <div class="pricing-card">
       <p class="pricing-card__price">{{ offer.price }}</p>
       <p class="pricing-card__anchor"><s>{{ offer.anchor }}</s> value</p>
-      <p class="pricing-card__urgency">Intro price {{ offer.urgency }}</p>
+      <p class="pricing-card__urgency">{{ offer.urgency }}</p>
       <a class="button" href="/deep-dive/">Get your Deep Dive</a>
     </div>
   </div>
