@@ -43,6 +43,15 @@ The endpoint fetches and parses the visitor's own website **server-side** — CO
 
 ---
 
+## Cost model
+
+- **Free tier: zero Places calls, zero marginal cost per scan.** Scales with traffic at no API cost.
+- **Paid tier: Places calls only occur after payment.** Every API call has revenue attached.
+- **The tier trap:** requesting ratings or reviews in a Places call moves it from the **Pro SKU (5,000 free calls/month)** to **Enterprise (1,000/month)**. The paid report needs those fields, so **budget against the 1,000 figure, not 5,000.**
+- These figures are **as of 2026-07-22** and Google has restructured Maps pricing before — verify against Google's current pricing page before relying on them.
+
+---
+
 ## Free tier — what it must NOT do
 
 **HARD RULE, not a style note: the free tier never renders a verdict.** No "your site looks healthy," no score, no letter grade, no green checkmark summary. A technically clean website can have a disastrous local presence — clean titles and valid schema say nothing about rankings, reviews, or a competitor owning the map pack. A "healthy" verdict from the free tool would be a false all-clear that costs the visitor real calls and costs us the sale.
@@ -65,7 +74,8 @@ What it does instead: **reports what it checked and what it found, then names th
 1. Buyer pays via **Stripe Payment Link**. Business name and city collected as **Stripe custom fields** at checkout.
 2. System queries the **Places API** with name + city.
 3. **WRONG-BUSINESS CONFIRMATION — mandatory.** Places returns candidates. The buyer is shown **2–4 matching listings** with name, address, and rating, and **must click the one that is theirs** before the report generates. **No auto-delivery on an unconfirmed match, ever.**
-4. Report generates against the **confirmed `place_id`**.
+4. **If none of the candidates match**, the buyer selects a "none of these look right" option. This routes to manual handling — the report is not generated automatically. This is the escape hatch for the case where Places returns nothing usable; it must never force a guess.
+5. Report generates against the **confirmed `place_id`**.
 
 ---
 
@@ -84,4 +94,4 @@ The confirmation step is how full automation honors that decision: the human jud
 ## Open items
 
 - [ ] **Docs-sync needed:** `SITE_BUILD_SPEC.md` build step 8 (GitHub Pages DNS) superseded by Cloudflare Pages; `PROJECT_MASTER.md:122–126/224/240` still describe the manual-insight-pass launch model and need updating to record the automated model + buyer-confirmation gate as the wrong-business solution.
-- [ ] **This doc was written from a truncated dispatch** — the source spec cut off at the "Why the confirmation step exists" heading. That section (and this doc's completeness against anything the manager spec'd beyond it) needs manager review.
+- [x] Manager review complete (2026-07-22). The authored "Why the confirmation step exists" section was reviewed and retained as written.
