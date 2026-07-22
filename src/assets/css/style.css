@@ -1,0 +1,66 @@
+/* ==========================================================================
+   Rank On Call — design tokens + reset
+   Source of truth: docs/SITE_BUILD_SPEC.md → "Design System (LOCKED)"
+   Tokens and reset ONLY — component/section styles land in later build steps.
+   ========================================================================== */
+
+/* Google Fonts: DM Serif Display (display) + Outfit (body/UI) */
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300..700&display=swap");
+
+:root {
+  /* --- Color ---
+     HARD RULE: accent is accent ONLY, never a background fill. */
+  --color-accent: #1e40af;      /* royal blue — buttons, labels, wordmark span,
+                                   hero italic phrase, step numbers, pricing border */
+  --color-ink: #0f1114;         /* near-black — hero, footer, nav CTA bg */
+  --color-navy-deep: #0c1836;   /* deep navy — "See It First" band ONLY */
+  --color-bg: #ffffff;          /* light sections */
+  --color-bg-alt: #fbfbfc;      /* light sections, cool neutral — NOT SOC's warm cream */
+
+  /* --- Typography --- */
+  --font-display: "DM Serif Display", serif;  /* headlines, wordmark, prices, step numbers — nothing else */
+  --font-body: "Outfit", sans-serif;          /* all body copy, nav, buttons, labels */
+
+  /* --- Radii --- */
+  --radius-button: 8px;       /* default buttons */
+  --radius-button-nav: 6px;   /* nav CTA variant */
+
+  /* --- Spacing / layout --- */
+  --section-padding: 6rem 2rem;
+  --container-wide: 1200px;
+  --container-default: 1100px;
+  --container-narrow: 720px;
+  --nav-height: 72px;
+}
+
+/* --- Minimal reset --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--color-ink);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  margin: 0;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
