@@ -543,6 +543,189 @@ img {
   font-weight: 600;
 }
 
+/* ==========================================================================
+   Free scan page  (src/deep-dive.njk + assets/js/scan.js)
+   Tokens only, zero new hex, zero !important. NO pass/fail styling exists
+   here by design — do not add "success" colors to scan results.
+   ========================================================================== */
+
+.scan {
+  background: var(--color-bg);
+  padding: var(--section-padding);
+}
+
+.scan__inner {
+  max-width: var(--container-narrow);
+  margin: 0 auto;
+}
+
+.scan__title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.scan__intro {
+  line-height: 1.6;
+  margin: 0 0 2.5rem;
+}
+
+.scan-form__label,
+.optin-form__label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.scan-form__row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.scan-form__input {
+  flex: 1 1 260px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-button);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+.scan-form__input:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.scan-form__error {
+  font-weight: 600;
+  margin: 1rem 0 0;
+}
+
+.scan-results {
+  margin-top: 3rem;
+}
+
+.scan-results__heading {
+  font-size: 1.75rem;
+  margin-bottom: 1.5rem;
+  overflow-wrap: anywhere;
+}
+
+/* A check block is NEUTRAL — same treatment with or without findings */
+.scan-check {
+  background: var(--color-bg-alt);
+  border-radius: var(--radius-button);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.scan-check__name {
+  font-size: 1.15rem;
+  margin: 0 0 0.75rem;
+}
+
+.scan-check__evidence {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.scan-check__findings {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.scan-check__finding {
+  font-weight: 600;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.scan-check__caveat {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin: 0.75rem 0 0;
+}
+
+/* The capability boundary — visually distinct via the accent BORDER (never fill) */
+.scan-cannot-see {
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-button);
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.scan-cannot-see__heading {
+  font-size: 1.35rem;
+  margin: 0 0 0.75rem;
+}
+
+.scan-cannot-see__pitch {
+  margin: 1rem 0 0;
+  line-height: 1.6;
+}
+
+.scan-unreadable {
+  background: var(--color-bg-alt);
+  border-radius: var(--radius-button);
+  padding: 1.5rem;
+}
+
+.scan-unreadable__heading {
+  font-size: 1.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.scan-unreadable__next {
+  margin: 1rem 0 0;
+  line-height: 1.6;
+}
+
+.optin {
+  margin-top: 3rem;
+  background: var(--color-bg-alt);
+  border-radius: var(--radius-button);
+  padding: 1.5rem;
+}
+
+.optin__heading {
+  font-size: 1.35rem;
+  margin: 0 0 1rem;
+}
+
+.optin-form .scan-form__input {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: 1rem;
+}
+
+.optin-form__consent {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.optin-form__consent input {
+  margin-right: 0.5rem;
+}
+
+.optin-form__consent input:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.optin-form__msg {
+  font-weight: 600;
+  margin: 1rem 0 0;
+}
+
 /* Responsive — cards and steps stack below 720px */
 @media (max-width: 720px) {
   .problem__cards,

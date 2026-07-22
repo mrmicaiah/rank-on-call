@@ -1,0 +1,49 @@
+---
+layout: base.njk
+title: Free Instant Site Scan
+description: Run a free instant scan of your website — see what search engines can read on your site right now, in seconds, no email required.
+permalink: "/deep-dive/"
+---
+{# The free-tier scan page (BOT_ARCHITECTURE free tier). Consumes POST /api/scan.
+   HARD RULE carried from the doc: no verdicts, no checkmarks, no scores — the
+   renderer in /assets/js/scan.js enforces this; keep it that way. #}
+
+<section class="scan">
+  <div class="scan__inner">
+    <h1 class="scan__title">See what search engines see — free, in seconds</h1>
+    <p class="scan__intro">This scan reads your website the way search engines do and reports what it finds — title tags, structured data, the phone numbers and addresses on your page, and broken placeholder counters. It's free, it takes a few seconds, and it doesn't ask for your email.</p>
+
+    <form id="scan-form" class="scan-form" novalidate>
+      <label class="scan-form__label" for="scan-url">Your website address</label>
+      <div class="scan-form__row">
+        {# type=text + inputmode=url, NOT type=url: native url validation rejects
+           bare domains like "yoursite.com" — the server normalizes instead #}
+        <input class="scan-form__input" id="scan-url" name="url" type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="yoursite.com" required>
+        <button class="button scan-form__submit" id="scan-submit" type="submit">Run the free scan</button>
+      </div>
+      <p class="scan-form__error" id="scan-error" hidden></p>
+    </form>
+
+    <div id="scan-results" class="scan-results" aria-live="polite" data-price="{{ offer.price }}"></div>
+
+    <section id="email-optin" class="optin" hidden>
+      <h2 class="optin__heading">Want local-search tips as we publish them?</h2>
+      <form id="optin-form" class="optin-form" novalidate>
+        <label class="optin-form__label" for="optin-email">Email (optional)</label>
+        <input class="scan-form__input" id="optin-email" type="email" autocomplete="email" placeholder="you@example.com">
+        <label class="optin-form__consent">
+          <input type="checkbox" id="optin-consent"> Send me occasional local-search tips. Unsubscribe anytime.
+        </label>
+        <button class="button" type="submit">Sign up</button>
+        <p class="optin-form__msg" id="optin-msg" aria-live="polite"></p>
+      </form>
+    </section>
+  </div>
+</section>
+
+<script src="/assets/js/scan.js" defer></script>
+
+{% set ctaVariant = "dark" %}
+{% set ctaHeading = "Ready for the whole picture?" %}
+{% set ctaBody = "The free scan reads your website. The paid Deep Dive covers the other side of the line — your Business Profile, your reviews, your rankings, and who outranks you." %}
+{% include "deep-dive-cta.njk" %}

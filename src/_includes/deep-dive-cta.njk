@@ -10,9 +10,9 @@
     ctaHeading    — section heading
     ctaBody       — supporting copy
     ctaButtonText — button label
-    ctaHref       — button destination. Default "/deep-dive/" is a PLACEHOLDER:
-                    no intake-page URL is pinned in the spec yet. Fix here once
-                    the intake page lands (build step 6).
+    ctaHref       — button destination. Default "/deep-dive/" is the live free
+                    scan page (the funnel's first step). When the Stripe Payment
+                    Link exists, revisit whether this points there instead.
     ctaVariant    — "light" (default) or "dark" background treatment
 #}
 <section class="deep-dive-cta deep-dive-cta--{{ ctaVariant | default("light") }}">

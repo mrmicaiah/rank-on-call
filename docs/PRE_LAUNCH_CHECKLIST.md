@@ -18,8 +18,10 @@
 
 ## Code placeholders
 
-- [ ] **`ctaHref` default `/deep-dive/`** in `src/_includes/deep-dive-cta.njk` — resolve at build step 6.
-- [ ] **Nav CTA href `/deep-dive/`** in `src/_includes/base.njk` — resolve at build step 6, **must match the above** (both are comment-marked `PLACEHOLDER` in-file).
+- [x] **`ctaHref` default `/deep-dive/`** in `src/_includes/deep-dive-cta.njk` — **RESOLVED**: `/deep-dive/` is now the live free scan page. *(Resolved in the "feat: add free scan page" commit.)*
+- [x] **Nav CTA href `/deep-dive/`** in `src/_includes/base.njk` — **RESOLVED**: same target, matches the above. *(Same commit.)*
+- [ ] **Paid checkout destination is still TBD** — `/deep-dive/` hrefs now land on the FREE scan page (the funnel's first step), but no Stripe Payment Link exists yet. When it does, decide whether the CTA include points at it directly or the scan page carries the buy button (per `docs/BOT_ARCHITECTURE.md` paid-tier flow).
+- [ ] **Email opt-in has NO backend** — the `/deep-dive/` opt-in form is a deliberate stub: it saves nothing and says so on submit. **Must not go live collecting addresses that go nowhere.** Before enabling: mailing-list infrastructure + **CAN-SPAM compliance (real unsubscribe link and a physical mailing address on every send)** — both are legal requirements, per `docs/BOT_ARCHITECTURE.md` → Email capture.
 - [ ] **Hardcoded copyright year** (`© 2026`) in `src/_includes/base.njk` footer — replace with a computed date filter.
 - [x] **`/sample/` href placeholder** — **RESOLVED**: `src/sample.njk` now publishes at permalink `/sample/`, matching both homepage hrefs. *(Resolved in the "feat: add anonymized sample report page" commit.)*
 
