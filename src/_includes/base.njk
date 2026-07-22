@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if title %}{{ title }} — {{ site.name }}{% else %}{{ site.name }}{% endif %}</title>
+  <meta name="description" content="{{ description or site.description }}">
+  <meta property="og:title" content="{% if title %}{{ title }}{% else %}{{ site.name }}{% endif %}">
+  <meta property="og:description" content="{{ description or site.description }}">
+  {# Brand assets are in-repo ONLY — never an external CDN (non-inheritance rule #3) #}
+  <meta property="og:image" content="{{ site.url }}/assets/img/og-image.png">
+  <meta property="og:url" content="{{ site.url }}{{ page.url }}">
+  <link rel="icon" href="/assets/img/favicon.png">
+  {# Fonts: preconnect + single stylesheet — DM Serif Display (display) + Outfit (body/UI) #}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300..700&display=swap">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="wordmark" href="/">Rank On <span>Call</span></a>
+      <nav class="site-nav" aria-label="Main">
+        {# href is the same /deep-dive/ PLACEHOLDER as the CTA include — fix both at build step 6 #}
+        <a class="nav-cta" href="/deep-dive/">Get your Deep Dive</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    {{ content | safe }}
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p class="wordmark wordmark--footer">Rank On <span>Call</span></p>
+      <p class="site-footer__sister">Sister company of <a href="https://sitesoncall.com">Sites On Call</a></p>
+      <p class="site-footer__copyright">© 2026 Rank On Call</p>
+    </div>
+  </footer>
+</body>
+</html>
