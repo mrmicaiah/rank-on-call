@@ -166,13 +166,13 @@ That friction **rebuilds a consulting engagement**: it turns a 60-second purchas
 
 Every article and every page ends in the same CTA. **Build it as a SINGLE reusable 11ty include/partial** — e.g. `_includes/deep-dive-cta.njk` — **from day one. NOT hardcoded per page.**
 
-**This is a hard requirement, and here is why:** the offer is a **price ramp** ($39 → $69 → $99 → toward $249) and the *"through end of September"* line is **time-bound**. When the price or the date changes — and both will — it must be a **one-file edit**, not an 18-file find-and-replace across every article ever published. Hardcoding it is cheap today and expensive every month after.
+**This is a hard requirement, and here is why:** the offer is a **price ramp** ($39 → $69 → $99 → toward $249) and the offer-window line (currently *"Founding price through 2026"*) is **time-bound**. When the price or the window changes — and both will — it must be a **one-file edit**, not an 18-file find-and-replace across every article ever published. Hardcoding it is cheap today and expensive every month after. **In practice the one file is `src/_data/offer.json`** — the include and every other consumer render from it; docs describe the values, the data file defines them.
 
 The include contains, all in one place:
 
 - The price — **$39**
 - The anchor — **$249**
-- The urgency line — *through end of September*
+- The offer-window line — *"Founding price through 2026"* (from `src/_data/offer.json`)
 - The primary CTA button
 - **The SOC cross-link** — *"want someone to just fix all this? → sitesoncall.com"*
 

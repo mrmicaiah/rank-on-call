@@ -24,7 +24,7 @@ Rank On Call sells a paid business-intelligence audit — the "Deep Dive" report
 | Sister business | Sites On Call — the high-ticket back end (websites + SEO) |
 | Domain | rankoncall.com — purchased, registrar GoDaddy (DNS → GitHub Pages at launch) |
 | Repo | `mrmicaiah/rank-on-call` |
-| Price | $39 intro / $249 stated anchor value / limited-time through end of September |
+| Price | $39 intro / $249 stated anchor value / "Founding price through 2026" — canonical values live in `src/_data/offer.json`; this table describes them, it does not define them |
 | The Product Engine | The existing `web-deep-dive` skill in the Productivity MCP |
 
 ---
@@ -161,7 +161,7 @@ Full automation (Stripe → auto-generate → auto-deliver) is a **later phase**
 - **A clickable SAMPLE Deep Dive report.** Produced by running a real deep dive — **Rob is a ready candidate** — then scrubbing all business-specific data to "Sample/Test." Nobody buys a $39 report sight-unseen; the sample *is* the sales page.
 - **Link(s) back to Sites On Call** — the soft upsell path for buyers who'd rather hire the fix than do it.
 - **The content engine as a first-class part of the site.** Not "a blog we'll fill in later." The articles *are* the funnel (see *The Funnel*); the site architecture must be built around them from the start.
-- **Pricing presentation** — $39 intro, $249 anchor value, September urgency, stated plainly.
+- **Pricing presentation** — $39 intro, $249 anchor value, founding-price framing ("Founding price through 2026"), stated plainly. (Canonical values: `src/_data/offer.json`.)
 
 ---
 

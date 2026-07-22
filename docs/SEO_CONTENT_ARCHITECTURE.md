@@ -153,7 +153,9 @@ Every article — pillar or cluster, all three hubs — ends in the same two-par
 
 **Part 2 — the Deep Dive CTA, verbatim shape:**
 
-> **Find out exactly what's wrong with your online presence — get your Deep Dive for $39** (normally $249, through end of September).
+> **Find out exactly what's wrong with your online presence — get your Deep Dive for $39** (normally $249 — founding price through 2026).
+
+*(Price, anchor, and offer window are rendered from `src/_data/offer.json` via the CTA include — this template describes the shape, the data file defines the values.)*
 
 **Then the SOC cross-link, as the alternate door:**
 
@@ -192,6 +194,6 @@ Owner input needed. None of these block starting Hub 1.
 - [ ] **Publish cadence** — how many articles per week/month is realistic? Affects whether the build order above is a 6-week plan or a 6-month one.
 - [ ] **Sample Deep Dive: before or alongside the first articles?** Article **3.5** (*"We Ran One Cold on a Stranger"*) is effectively the sample report in article form, and every CTA asks for $39 sight-unseen. Recommendation: **seed the sample first** — the CTA is materially weaker without something to click. Master doc has this as Phase 2, before the site build (Phase 3), which is consistent.
 - [ ] **Does the Deep Dive get its own landing page, or is the CTA inline-only?** Assumed a dedicated pricing/offer page exists per the master doc's site requirements; confirm.
-- [ ] **September urgency after September** — the "$249, through end of September" line is baked into every article's CTA. Decide now whether it rolls forward, gets replaced, or the price ramps (master doc says the price is a ramp). If CTAs are hardcoded, this is a site-wide edit later; worth making it a single reusable include at build time.
+- [x] **September urgency after September — RESOLVED (commit f0f9cbb).** The countdown wording was replaced with founding-cohort framing: "Founding price through 2026" — it ages gracefully and doesn't expire before launch traffic exists. Both halves of the original worry got structural fixes: the wording lives in `src/_data/offer.json` (one-file edit), and the CTA is the reusable `_includes/deep-dive-cta.njk`, never hardcoded per article. Original reasoning preserved: ~~the "$249, through end of September" line is baked into every article's CTA. Decide now whether it rolls forward, gets replaced, or the price ramps (master doc says the price is a ramp). If CTAs are hardcoded, this is a site-wide edit later; worth making it a single reusable include at build time.~~
 - [ ] **SOC article inventory** — the cross-link column names 10 SOC articles, but SOC has ~22. The remaining ones aren't catalogued anywhere in this repo, so later articles may miss a better match or unknowingly duplicate SOC ground. Suggest a `docs/SOC_CONTENT_INVENTORY.md` (URL + target keyword + lane) before Hub 2.
 - [ ] **Do any of these titles collide head-on with an existing SOC article?** Verify against the live SOC library before publishing — the lane split only holds if it's checked.
