@@ -119,13 +119,15 @@ That last finding is worth the $39 on its own. It is invisible from the inside, 
 
 ---
 
-## Launch Model — Human Insight Pass (NOT full automation)
+## Launch Model — Automated Two-Tier, Buyer-Confirmed *(superseded 2026-07-22: was "Human Insight Pass")*
 
-The skill generates the raw report **sections** reliably. What it does not generate on its own is the **insight** — connecting three scattered addresses into the single finding *"your NAP is inconsistent and it's costing you local rank,"* or noticing that a stat counter rendering "0+" is worse than no counter at all. On the Rob run, that judgment played out across roughly **8 tool calls** and required a human reading the output.
+> **SUPERSEDED 2026-07-22.** Launch is now **automated and two-tier** — a free instant site scan plus the paid GBP report — with the **buyer-confirmation step** as the wrong-business gate: Places candidates are shown to the buyer, who must click their own listing before the report generates; "none of these look right" routes to manual handling. Full spec: `docs/BOT_ARCHITECTURE.md`. **The constraint below is unchanged and still binding — wrong-business verification still precedes any auto-delivery. What changed is HOW it is satisfied: the verification judgment moved from a per-report human pass to the buyer, the one person who can answer it instantly and with certainty.**
 
-**Launch model = automated data-gathering + a FAST HUMAN INSIGHT PASS before delivery.**
+The skill generates the raw report **sections** reliably. What it does not generate on its own is the **insight** — connecting three scattered addresses into the single finding *"your NAP is inconsistent and it's costing you local rank,"* or noticing that a stat counter rendering "0+" is worse than no counter at all. On the Rob run, that judgment played out across roughly **8 tool calls** and required a human reading the output. *(2026-07-22: those judgments are now encoded as the hand-built checks the automated engine runs — the human contribution is front-loaded into the method, not applied per-report. This is also what the site publicly claims.)*
 
-Full automation (Stripe → auto-generate → auto-deliver) is a **later phase**, and it cannot ship until it solves the **wrong-business problem**. The skill's Phase 1 is *verification* for a reason: three different businesses can share a name, and the correct one is not always the first result. A bot firing reports at strangers without that safeguard will, eventually and inevitably, email a polished, confident, completely wrong report about someone else's company — with a Stripe receipt attached. That is a refund, a bad review, and a credibility loss in one message. Verification is not optional overhead; it is the thing that makes automation survivable.
+~~**Launch model = automated data-gathering + a FAST HUMAN INSIGHT PASS before delivery.**~~
+
+~~Full automation (Stripe → auto-generate → auto-deliver) is a **later phase**, and it cannot ship until it solves the **wrong-business problem**.~~ Full automation ships at launch **because** it solves the wrong-business problem with the buyer-confirmation gate. The reasoning that made the safeguard mandatory is unchanged: three different businesses can share a name, and the correct one is not always the first result. A bot firing reports at strangers without that safeguard will, eventually and inevitably, email a polished, confident, completely wrong report about someone else's company — with a Stripe receipt attached. That is a refund, a bad review, and a credibility loss in one message. Verification is not optional overhead; it is the thing that makes automation survivable.
 
 ---
 
@@ -184,7 +186,7 @@ Build output `_site` is git-ignored.
 
 ## Known Risks & Soft Spots
 
-**(a) Full automation vs. the insight layer.** Covered in *Launch Model — Human Insight Pass* above. The short version: the data-gathering automates, the judgment does not yet, and automating delivery before solving wrong-business verification is the single highest-consequence mistake available to this project.
+**(a) Full automation vs. the insight layer.** Covered in *Launch Model — Automated Two-Tier, Buyer-Confirmed* above. The short version: ~~the data-gathering automates, the judgment does not yet, and~~ automating delivery before solving wrong-business verification is the single highest-consequence mistake available to this project. *(2026-07-22: the constraint stands; it is now satisfied by the buyer-confirmation gate — the buyer clicks their own listing before generation. The risk to keep watching is gate integrity: any future change that generates a report without a confirmed `place_id` reopens this exact failure mode.)*
 
 **(b) GBP / Google Maps soft spot.** The **live Google Business Profile star rating and review count CANNOT be reliably pulled by the current toolset** — there is no Google Maps tool in the stack. Rob's "5.0, 70+ reviews" came from **their own website**, not from Google. That number could be stale, aspirational, or wrong, and presenting it as verified Google data in a paid report is a credibility risk.
 
@@ -221,9 +223,9 @@ The order below is the **safe** order. Each phase de-risks the next.
 - [ ] **Phase 1 — Verify demand / keywords.** (a) Check keyword targets against `docs/SOC_CONTENT_INVENTORY.md` to avoid head-on collisions with SOC's existing library, then (b) run fresh keyword + difficulty research to pin the specific pain-symptom clusters to target. **Verify SEO-Scout balance first** (see *Scars*).
 - [x] **Phase 2 — Build the sample report.** ✓ Side-by-side scrubbed sample created (`samples/sample-deep-dive-comparison.md`).
 - [ ] **Phase 3 — Stand up the site.** 11ty: content architecture + intake form + sample report + Sites On Call cross-links + pricing page. Full plan in `docs/SITE_BUILD_SPEC.md`. **Includes a pre-launch gate:** the Places API skill must be built and real GBP figures populated *before* go-live.
-- [ ] **Phase 4 — Manual fulfillment first.** Human insight pass on every report + a delivery email that includes a **Google review link** → this is the review flywheel that earns permission for the price ramp.
+- [ ] **Phase 4 — ~~Manual fulfillment first. Human insight pass on every report~~ Automated fulfillment** *(superseded 2026-07-22 — see Launch Model)* + a delivery email that includes a **Google review link** → this is the review flywheel that earns permission for the price ramp. *(The flywheel email survives automation unchanged.)*
 - [ ] **Phase 5 — Add Stripe self-serve.**
-- [ ] **Phase 6 — Automate delivery LAST**, and only **WITH** the wrong-business safeguard in place.
+- [ ] **Phase 6 — ~~Automate delivery LAST~~, and only **WITH** the wrong-business safeguard in place.** *(2026-07-22: delivery automation moved into the launch model itself; the safeguard requirement is unchanged and is met by the buyer-confirmation gate — `docs/BOT_ARCHITECTURE.md`.)*
 
 > **Explicit note:** do **NOT** let Stripe or chatbot automation jump the queue. Automation feels like progress and is the most tempting thing to build first; building it before Phases 1–4 means automating a funnel that hasn't been proven and a report that hasn't been reviewed.
 
@@ -234,12 +236,14 @@ The order below is the **safe** order. Each phase de-risks the next.
 | Date | Decision | Notes |
 |---|---|---|
 | 2026-07-21 | Brand = **Rank On Call** | Domain rankoncall.com purchased (registrar GoDaddy); trademark cleared. Sibling to Sites On Call. |
-| 2026-07-21 | Stack = **11ty / Nunjucks + GitHub Pages** | Reuse the sister-site pattern; no `split` filter in Nunjucks |
+| 2026-07-21 | Stack = **11ty / Nunjucks + ~~GitHub Pages~~** | Reuse the sister-site pattern; no `split` filter in Nunjucks. **Hosting superseded 2026-07-22 → Cloudflare Pages (see row below).** |
 | 2026-07-21 | Funnel = **symptom-keyword content + $39 report CTA**, **NO city pages** | Tested against real keyword data; product-name searches return 0 results |
 | 2026-07-21 | **Google Places API skill = deferred** | ~~Post-launch; the report works without it~~ **SUPERSEDED same day — see the pre-launch-gate row below.** |
-| 2026-07-21 | **Launch = manual human insight pass**, automation last | Wrong-business verification must precede any auto-delivery |
+| 2026-07-21 | ~~**Launch = manual human insight pass**, automation last~~ **SUPERSEDED 2026-07-22 (see automated-launch row below)** | Wrong-business verification must precede any auto-delivery — **this constraint is unchanged and still binding** |
 | 2026-07-21 | **Lane split: SOC teaches/fixes, Rank On Call diagnoses** | Resolves cannibalization — same keyword pool, different intent, mutual cross-linking. SOC has ~22 articles already ranking; do not mirror them head-on. |
 | 2026-07-21 | Places API skill = **pre-launch gate**, not post-launch | GBP rating is a real report field; site won't launch with "pending" wording. Requires owner's Google Cloud key. |
+| 2026-07-22 | **Launch = automated two-tier** (free instant site scan + paid GBP report), **buyer-confirmation gate** for wrong-business | The 07-21 constraint is met by the buyer clicking their own listing before generation; "none of these look right" routes to manual handling. Human judgment front-loaded into the method, not per-report. Full spec: `docs/BOT_ARCHITECTURE.md` |
+| 2026-07-22 | Hosting = **Cloudflare Pages** (`rank-on-call.pages.dev`), not GitHub Pages | GitHub Pages cannot run the serverless functions the Deep Dive tool requires (Pages Functions in `functions/`) |
 
 ---
 

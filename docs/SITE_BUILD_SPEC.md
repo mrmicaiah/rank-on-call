@@ -18,9 +18,9 @@ This is the build plan for **rankoncall.com** — an 11ty static site whose enti
 ## Tech stack (locked)
 
 - **Eleventy (11ty) / Nunjucks**
-- **GitHub + GitHub Actions** deploy
-- **GitHub Pages** hosting
-- **Domain: rankoncall.com** — purchased, registrar **GoDaddy**. DNS → Pages via **A records + CNAME** at launch.
+- **GitHub repo → Cloudflare Pages** deploy — project **rank-on-call.pages.dev**, from `mrmicaiah/rank-on-call`, production branch `main`, build command `npm run build`, output `_site`.
+  > **Was ~~GitHub Pages hosting~~ — superseded 2026-07-22.** GitHub Pages was ruled out because it **cannot run serverless functions**, and the two-tier Deep Dive tool requires them (Cloudflare Pages Functions in `functions/` — full spec in `docs/BOT_ARCHITECTURE.md`). The reason is the decision: static-only hosting can't serve this product.
+- **Domain: rankoncall.com** — purchased, registrar **GoDaddy**. DNS → **Cloudflare Pages custom domain** at launch (records per Cloudflare's custom-domain flow).
 - Reuses the **Sites On Call pattern** end to end — same workflow, which is what makes cross-linking natural rather than a bolt-on.
 - Build output **`_site` is git-ignored.**
 
@@ -219,7 +219,7 @@ Header and footer link to **sitesoncall.com**. The two sites **reinforce, they d
 5. **Build the pricing** section/page.
 6. **Build the intake form page** (form tech TBD; Stripe later).
 7. **Build Hub 1 (Visibility)** — pillar + top 2–3 diagnostic articles, each ending in the CTA include, each cross-linked to SOC.
-8. **Point rankoncall.com DNS → GitHub Pages**; HTTPS; verify in Search Console; submit sitemap; GA4.
+8. **Point rankoncall.com DNS → Cloudflare Pages** (custom domain on the `rank-on-call.pages.dev` project); HTTPS; verify in Search Console; submit sitemap; GA4. *(Was GitHub Pages — superseded 2026-07-22, see Tech stack.)*
 9. **PRE-LAUNCH GATE** — build + connect the Places API skill, populate real GBP figures (including the sample), confirm **no "pending" wording remains** anywhere.
 10. **Go live.**
 
@@ -244,4 +244,5 @@ Header and footer link to **sitesoncall.com**. The two sites **reinforce, they d
 | `docs/SEO_CONTENT_ARCHITECTURE.md` | Keyword pyramid, 3 diagnostic hubs, 18 article ideas, the voice spec. |
 | `docs/SOC_CONTENT_INVENTORY.md` | SOC's 22 articles — cross-link targets + collision check. |
 | `samples/sample-deep-dive-comparison.md` | The scrubbed side-by-side sample — the site's sales centerpiece. |
+| `docs/BOT_ARCHITECTURE.md` | The two-tier Deep Dive tool: free scan + paid report, Cloudflare Pages Functions, buyer-confirmation gate. |
 | `docs/SITE_BUILD_SPEC.md` | This document. |

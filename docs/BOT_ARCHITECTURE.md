@@ -22,7 +22,7 @@ The paywall sits on a **real capability boundary** — the free tier genuinely c
 - Serverless endpoints live in a **`functions/` directory** in the same repo (Cloudflare Pages Functions). **One repo, one deploy.**
 - The Places API key lives **ONLY in Cloudflare's environment variables** (`GOOGLE_PLACES_API_KEY`, mirroring `.env.example`). It is **never** in the repo, never in client-side JS, never in a build artifact. (Local dev: `.env`, gitignored — see `docs/PRE_LAUNCH_CHECKLIST.md` for the deploy-host env-var owner action.)
 
-> Note: `docs/SITE_BUILD_SPEC.md` currently names **GitHub Pages** as the host. GitHub Pages cannot run serverless functions, so this architecture supersedes that choice — flagged for a docs-sync; the spec's DNS/deploy step (build step 8) needs updating to Cloudflare Pages.
+> `docs/SITE_BUILD_SPEC.md` was synced to this hosting choice on 2026-07-22 (Tech stack + build step 8) — GitHub Pages was ruled out because it cannot run the serverless functions the bot requires.
 
 ---
 
@@ -43,20 +43,20 @@ The endpoint fetches and parses the visitor's own website **server-side** — CO
 
 ---
 
+## Free tier — what it must NOT do
+
+**HARD RULE, not a style note: the free tier never renders a verdict.** No "your site looks healthy," no score, no letter grade, no green checkmark summary. A technically clean website can have a disastrous local presence — clean titles and valid schema say nothing about rankings, reviews, or a competitor owning the map pack. A "healthy" verdict from the free tool would be a false all-clear that costs the visitor real calls and costs us the sale.
+
+What it does instead: **reports what it checked and what it found, then names the gap explicitly** — the things it cannot see from outside (how you appear in local search, your Business Profile, your reviews, who outranks you) are the paid report. The boundary line is the sales pitch, stated as fact.
+
+---
+
 ## Cost model
 
 - **Free tier: zero Places calls, zero marginal cost per scan.** Scales with traffic at no API cost.
 - **Paid tier: Places calls only occur after payment.** Every API call has revenue attached.
 - **The tier trap:** requesting ratings or reviews in a Places call moves it from the **Pro SKU (5,000 free calls/month)** to **Enterprise (1,000/month)**. The paid report needs those fields, so **budget against the 1,000 figure, not 5,000.**
 - These figures are **as of 2026-07-22** and Google has restructured Maps pricing before — verify against Google's current pricing page before relying on them.
-
----
-
-## Free tier — what it must NOT do
-
-**HARD RULE, not a style note: the free tier never renders a verdict.** No "your site looks healthy," no score, no letter grade, no green checkmark summary. A technically clean website can have a disastrous local presence — clean titles and valid schema say nothing about rankings, reviews, or a competitor owning the map pack. A "healthy" verdict from the free tool would be a false all-clear that costs the visitor real calls and costs us the sale.
-
-What it does instead: **reports what it checked and what it found, then names the gap explicitly** — the things it cannot see from outside (how you appear in local search, your Business Profile, your reviews, who outranks you) are the paid report. The boundary line is the sales pitch, stated as fact.
 
 ---
 
@@ -93,5 +93,5 @@ The confirmation step is how full automation honors that decision: the human jud
 
 ## Open items
 
-- [ ] **Docs-sync needed:** `SITE_BUILD_SPEC.md` build step 8 (GitHub Pages DNS) superseded by Cloudflare Pages; `PROJECT_MASTER.md:122–126/224/240` still describe the manual-insight-pass launch model and need updating to record the automated model + buyer-confirmation gate as the wrong-business solution.
+- [x] **Docs-sync complete (2026-07-22):** `SITE_BUILD_SPEC.md` hosting updated to Cloudflare Pages with the ruled-out reason recorded; `PROJECT_MASTER.md` launch-model sections and decision log updated to the automated model + buyer-confirmation gate, original constraints preserved.
 - [x] Manager review complete (2026-07-22). The authored "Why the confirmation step exists" section was reviewed and retained as written.

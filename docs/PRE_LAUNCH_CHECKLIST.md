@@ -7,7 +7,7 @@
 ## Owner actions (only Irene can do these)
 
 - [ ] **Confirm rankoncall.com is registered and owned** — currently hardcoded as the canonical URL in `src/_data/site.json`, unverified.
-- [ ] **Add an application restriction to the Google Places API key** (IP or HTTP referrer) once the deploy target is known. Key is currently API-restricted only. Console: *APIs & Services → Credentials → rank-on-call-places-server*.
+- [ ] **Add an application restriction to the Google Places API key** (IP or HTTP referrer). Key is currently API-restricted only. Console: *APIs & Services → Credentials → rank-on-call-places-server*. **Deploy target now known (Cloudflare Pages) — open question:** Cloudflare's egress IPs are not fixed, so an IP restriction likely won't hold; the restriction will probably need to be HTTP referrer, or handled by keeping the key server-side only in Pages Functions (its only location anyway, per `docs/BOT_ARCHITECTURE.md`). Decide which before launch.
 - [ ] **Add `GOOGLE_PLACES_API_KEY` to the deploy host's environment variables panel.**
 - [ ] **Decide the Deep Dive intake destination:** on-site page at `/deep-dive/` vs. direct payment-processor link. This determines whether build step 6 creates a form or a redirect.
 
