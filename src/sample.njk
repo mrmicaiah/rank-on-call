@@ -1,0 +1,158 @@
+---
+layout: base.njk
+title: Sample Deep Dive Report
+description: A real, anonymized Deep Dive comparing two contractors side by side — one neglected, one polished — and the specific, costly problems found on both.
+permalink: "/sample/"
+---
+{# Renders samples/sample-deep-dive-comparison.md as a styled page (build step 4).
+   ANONYMIZED — no names, locations, domains, owners, or quoted site text.
+   GBP rows carry the pre-launch-gate placeholder [populated at launch] ON PURPOSE:
+   the Places API gate (spec step 9) replaces them with verified figures before go-live. #}
+
+<section class="report-hero">
+  <div class="report-hero__inner">
+    <h1 class="report-hero__title">Sample Deep Dive Report</h1>
+    <p class="report-hero__sub">This is a real report. We ran two actual home-services contractors through the Deep Dive using nothing but their business name and city — the same fields any customer provides. Identifying details have been removed for privacy. <strong>Every finding below is real.</strong></p>
+    <p class="report-hero__sub">We're showing two companies side by side on purpose: <strong>Company A</strong> has a neglected online presence; <strong>Company B</strong> has clearly invested in theirs. The Deep Dive found real, costly problems on <em>both</em>. If the polished one has blind spots, everyone does.</p>
+  </div>
+</section>
+
+<section class="report">
+  <div class="report__inner">
+
+    <p class="report__meta"><strong>Industry:</strong> Gutter installation &amp; repair · <strong>Location:</strong> withheld for privacy</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>Company A</th><th>Company B</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">In business</th><td>Since ~2018</td><td>Stated as three different years (see below)</td></tr>
+          <tr><th scope="row">Web address age</th><td>~3 years</td><td>~12 years</td></tr>
+          <tr><th scope="row">Overall snapshot</th><td><span aria-hidden="true">🔴</span> Neglected — multiple critical issues</td><td><span aria-hidden="true">🟢</span> Polished — but with real hidden gaps</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Critical issues — the headline findings</h2>
+
+    <h3><span aria-hidden="true">🔴</span> Company A (the neglected one)</h3>
+    <ul class="findings">
+      <li><strong>The website tells every visitor the business has done zero jobs.</strong> Three "stats" counters on the homepage are broken and all render as <strong>"0&nbsp;+"</strong> — zero installs, zero repairs, zero 5-star reviews — while the top of the same page claims 70+ reviews. A potential customer sees a company advertising that it has completed nothing.</li>
+      <li><strong>Three different business addresses across its own listings</strong> — three street addresses in three ZIP codes, spread across the website, a directory, and a review platform. Search engines can't confirm where this business actually is.</li>
+      <li><strong>The business can't decide what it does.</strong> The logo and one social profile say gutters <em>and</em> roofing; the web address and page title say gutters only; a second social profile uses a different handle again. Search engines are told three different stories and commit to none.</li>
+    </ul>
+
+    <h3><span aria-hidden="true">🟢</span> Company B (the polished one)</h3>
+    <ul class="findings">
+      <li><strong>Not on the first page of search results for its own primary service, in its own city.</strong> Despite a 12-year-old web address, a modern site, and 240+ reviews, this business does not appear in the top 10 organic results. The top spots go to a national franchise, an aggregator, and several local competitors. <em>(Organic search only — the business may appear in the map/local pack, which this report doesn't measure. But missing from the main organic results is a real, fixable gap.)</em></li>
+      <li><strong>Three different founding years on its own materials.</strong> The site's metadata, its body copy, and third-party directories each state a different year in the same three-year span. Small, but it's the kind of inconsistency that erodes the trust signals search engines (and customers) rely on.</li>
+      <li><strong>The web address quietly expires in under 5 months.</strong> Easy to miss, expensive to forget — a lapsed domain takes the whole site, and every ranking earned over 12 years, down with it.</li>
+    </ul>
+
+    <h2>Digital presence</h2>
+
+    <h3>Website build</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>Company A</th><th>Company B</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Secure (HTTPS)</th><td>Yes</td><td>Yes</td></tr>
+          <tr><th scope="row">Mobile-friendly</th><td>Yes</td><td>Yes</td></tr>
+          <tr><th scope="row">Platform</th><td>Professional build by a paid industry vendor</td><td>Modern build, image CDN, online scheduling</td></tr>
+          <tr><th scope="row">Broken elements</th><td><strong>Yes — three "0+" stat counters</strong></td><td>None found</td></tr>
+          <tr><th scope="row">Overall</th><td>Competent build undermined by broken content</td><td>Genuinely well-built</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The irony for Company A: it isn't a cheap or amateur site — it's a professional build the owner is <em>paying</em> for, and the broken counters are still sitting there in plain view. Paying for a website doesn't mean anyone's checking it.</p>
+
+    <h3>Reviews &amp; reputation</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>Company A</th><th>Company B</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Rating shown on own site</th><td>5.0 (self-reported)</td><td>4.7★</td></tr>
+          <tr><th scope="row">Review count shown</th><td>"70+" (self-reported)</td><td>240+ claimed as verified</td></tr>
+          <tr><th scope="row">Substantiation</th><td>Number stated on own site; not independently shown</td><td>Named review quotes, per-project detail, third-party review integration</td></tr>
+          <tr><th scope="row">Verified Google Business Profile rating</th><td><code>[GBP verified rating — populated at launch]</code></td><td><code>[GBP verified rating — populated at launch]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>A note on the review numbers:</strong> the ratings above are what each business displays on its <em>own</em> website. The single most important number — the live Google Business Profile rating and review count as Google itself reports it — is pulled directly from Google's official Places API and populated before the report is delivered. The self-reported numbers are included for contrast; the live report shows the verified figure. Treat self-reported review counts as claims, not confirmed facts — which is exactly why independent verification matters.</p>
+
+    <h3>NAP consistency (Name / Address / Phone)</h3>
+    <p>NAP consistency is one of the biggest local-ranking factors: search engines need to see the <em>same</em> name, address, and phone everywhere. When they don't match, they lose confidence and rank the business lower.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>Company A</th><th>Company B</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Name consistent?</th><td><strong>No</strong> — gutters vs. gutters-and-roofing</td><td>Yes</td></tr>
+          <tr><th scope="row">Address consistent?</th><td><strong>No — 3 different addresses, 3 ZIP codes</strong></td><td>Appears consistent</td></tr>
+          <tr><th scope="row">Phone consistent?</th><td>Consistent</td><td>Consistent</td></tr>
+          <tr><th scope="row">Founding year consistent?</th><td>Single date</td><td><strong>No — three different years</strong></td></tr>
+          <tr><th scope="row">Overall</th><td><span aria-hidden="true">🔴</span> Serious inconsistency</td><td><span aria-hidden="true">🟡</span> Minor (the founding-year drift)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Competitive landscape</h2>
+    <p>We searched each business's primary "[service] [city]" term and looked at page 1 of the organic results.</p>
+    <p><strong>Company A:</strong> Ranks <strong>#3 organically</strong> — the highest-placed <em>independent local</em> business, but sitting behind a national franchise (#1) and an online directory (#2). Being #3 in your own city means two out of every three people who search never see you first.</p>
+    <p><strong>Company B:</strong> <strong>Not in the top 10 organic results</strong> for its main local search — despite being the more established, better-reviewed business. Outranked by a national franchise, an aggregator, a directory, and multiple local competitors. This is the finding that surprises confident owners the most: doing good work and having great reviews does not automatically put you on page 1.</p>
+
+    <h2>Domain status</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th>Company A</th><th>Company B</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Web address age</th><td>~3 years</td><td>~12 years</td></tr>
+          <tr><th scope="row">Expiry</th><td>Safe (years out)</td><td><strong>Under 5 months away</strong></td></tr>
+          <tr><th scope="row">The fuller version of the business name</th><td><strong>Owned by someone else</strong> — customers who type the natural, complete spelling land on a different company</td><td>Owned by the business</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Company A's domain problem is quietly costly: the most obvious, searchable version of its own name belongs to a competitor. Every customer who hears the name and types the full spelling is handed to someone else.</p>
+
+    <h2>Red flags summary</h2>
+
+    <h3><span aria-hidden="true">🔴</span> Company A</h3>
+    <ul class="findings">
+      <li>Broken "0+" counters advertising zero completed jobs</li>
+      <li>Three addresses / three ZIP codes across listings</li>
+      <li>Conflicting identity (gutters vs. roofing) across site and social</li>
+      <li>The fuller version of its name owned by a competitor</li>
+      <li>Review count self-reported, not independently verified</li>
+      <li>Only #3 in its own city, behind a franchise and a directory</li>
+    </ul>
+
+    <h3><span aria-hidden="true">🟡</span> Company B</h3>
+    <ul class="findings">
+      <li>Not on page 1 organically for its primary local search</li>
+      <li>Three conflicting founding years across its own materials</li>
+      <li>Domain expiring in under 5 months</li>
+      <li>Headline "verified reviews" number not independently confirmed against its Google Business Profile</li>
+    </ul>
+
+    <h2>What this means</h2>
+    <p>Two businesses, opposite ends of the spectrum — and the Deep Dive found real, fixable, money-costing problems on both.</p>
+    <p><strong>Company A</strong> is losing customers before they ever call: a site that says it's done zero jobs, an identity search engines can't pin down, and its own name pointing at a competitor.</p>
+    <p><strong>Company B</strong> is the more important lesson. It does everything a good contractor is <em>supposed</em> to do — great reviews, a sharp site, decades of experience — and it still isn't on page 1 for its own core search, still has inconsistencies quietly working against it, and is one forgotten renewal away from losing 12 years of ranking. <strong>If the sharp operator has blind spots this real, so does everyone.</strong></p>
+    <p>That's what the Deep Dive is for: finding the specific, checkable things costing you calls that you can't see from the inside — because you're too close to it, and because some of them (three addresses, a competitor owning your name, a rating that isn't what you think it is) are genuinely invisible unless someone goes looking.</p>
+
+  </div>
+</section>
+
+{% set ctaVariant = "dark" %}
+{% set ctaHeading = "Want to know exactly what's costing you calls?" %}
+{% set ctaBody = "This is a scrubbed sample of a real Deep Dive. Yours covers your business — same depth, same real findings." %}
+{% include "deep-dive-cta.njk" %}
