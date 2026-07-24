@@ -672,6 +672,16 @@ img {
   line-height: 1.6;
 }
 
+/* Buy button — reuses .button (radius/padding/weight/focus-visible/disabled) */
+.scan-buy {
+  margin-top: 1.5rem;
+}
+
+.scan-buy__msg {
+  font-weight: 600;
+  margin: 1rem 0 0;
+}
+
 .scan-unreadable {
   background: var(--color-bg-alt);
   border-radius: var(--radius-button);

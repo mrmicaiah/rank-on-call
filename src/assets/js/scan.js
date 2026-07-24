@@ -22,6 +22,10 @@
 
   var PRICE = results.getAttribute("data-price") || "$39";
 
+  // The URL the visitor just scanned, held in memory so the buy button can
+  // carry it to /api/checkout (Option B) without re-reading the input field.
+  var lastScannedUrl = "";
+
   var CHECK_LABELS = {
     titleMeta: "title tags and meta description",
     schema: "LocalBusiness structured data",
@@ -49,6 +53,49 @@
   function showError(msg) {
     errorEl.textContent = msg;
     errorEl.hidden = false;
+  }
+
+  /* ---- buy button (Option B: carries the scanned URL to checkout) ---- */
+
+  function buildBuyButton(label) {
+    var wrap = el("div", "scan-buy");
+    var btn = el("button", "button scan-buy__btn", label);
+    btn.type = "button";
+    var msg = el("p", "scan-buy__msg");
+    msg.setAttribute("aria-live", "polite");
+
+    btn.addEventListener("click", function () {
+      msg.textContent = "";
+      btn.disabled = true;
+      var restore = btn.textContent;
+      btn.textContent = "Starting checkout…";
+
+      fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Reuse the in-memory scanned URL — NOT a re-read of the input field.
+        body: JSON.stringify({ url: lastScannedUrl }),
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data && data.url) {
+            window.location = data.url; // hosted Stripe Checkout
+          } else {
+            btn.disabled = false;
+            btn.textContent = restore;
+            msg.textContent = "We couldn't start checkout — please try again.";
+          }
+        })
+        .catch(function () {
+          btn.disabled = false;
+          btn.textContent = restore;
+          msg.textContent = "We couldn't start checkout — please try again.";
+        });
+    });
+
+    wrap.appendChild(btn);
+    wrap.appendChild(msg);
+    return wrap;
   }
 
   /* ---- renderers ---- */
@@ -108,6 +155,7 @@
         el("p", "scan-cannot-see__pitch",
           "None of that is visible from your website — it lives in search results and your Business Profile. That's what the paid Deep Dive covers: the " + PRICE + " report on the other side of this line.")
       );
+      block.appendChild(buildBuyButton("Get the full Deep Dive — " + PRICE));
       results.appendChild(block);
     }
 
@@ -123,6 +171,10 @@
       el("p", "scan-unreadable__next",
         "No check results are shown because none were run — a page we can't read tells us nothing about your business, good or bad. The paid Deep Dive isn't limited to this fetch: it can research a site our scanner can't read, plus everything a website can't show (your profile, reviews, and rankings).")
     );
+    // The paid tier can handle a site our scanner couldn't read, so the buy
+    // button is offered here too — carrying the same URL even though the scan
+    // came back unreadable.
+    block.appendChild(buildBuyButton("Get the Deep Dive — " + PRICE));
     results.appendChild(block);
   }
 
@@ -136,6 +188,7 @@
       showError("Enter your website address.");
       return;
     }
+    lastScannedUrl = url; // hold for the buy button — the exact value we scanned
     setBusy(true);
 
     fetch("/api/scan", {
