@@ -1,0 +1,73 @@
+---
+layout: base.njk
+title: Confirm your business
+description: Payment confirmed — pick your Google listing so we research the right business before your Deep Dive is built.
+permalink: "/thank-you/"
+---
+{# Post-payment confirmation gate (BOT_ARCHITECTURE.md "Paid tier — the flow",
+   steps 3–5). Reads session_id from the query string, calls GET /api/confirm-business,
+   and makes the buyer click their own Google listing BEFORE any report generates.
+   No key ever touches this page — all lookups go through the server endpoint.
+   Follows the no-verdict rule: the success panel states research is underway,
+   never an outcome or finding. #}
+
+<section class="confirm">
+  <div class="confirm__inner">
+
+    {# Loading state — shown until the lookup returns #}
+    <div id="confirm-loading" class="confirm__loading" aria-live="polite">
+      <h1 class="confirm__title">Payment confirmed — thank you.</h1>
+      <p class="confirm__lead">Looking up your business…</p>
+    </div>
+
+    {# Populated on a successful lookup #}
+    <div id="confirm-main" hidden>
+      <p class="confirm__badge">Payment confirmed</p>
+      <h1 class="confirm__title">One thing before we start researching.</h1>
+      <p class="confirm__lead" id="confirm-prompt">Which of these is you? We research the exact business you pick — this is how we make sure your Deep Dive is about your company and no one else's.</p>
+
+      <form id="confirm-form" class="confirm-form" novalidate>
+        <fieldset class="confirm-candidates" id="confirm-candidates">
+          <legend class="confirm-candidates__legend">Pick your business</legend>
+          {# radio candidate cards injected by thank-you.js #}
+        </fieldset>
+
+        {# Manual entry — revealed when "None of these" is chosen #}
+        <div id="confirm-manual" class="confirm-manual" hidden>
+          <p class="confirm-manual__intro">No problem — tell us where to find you and we'll take it from there by hand.</p>
+          <label class="confirm-manual__label" for="manual-address">Business street address</label>
+          <input class="confirm-input" id="manual-address" name="manual-address" type="text" autocomplete="street-address" placeholder="123 Main St, City, ST">
+          <label class="confirm-manual__label" for="manual-phone">Business phone</label>
+          <input class="confirm-input" id="manual-phone" name="manual-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(555) 555-5555">
+        </div>
+
+        <label class="confirm-attest">
+          <input type="checkbox" id="confirm-attest-box">
+          <span>I am the owner or an authorized representative of this business.</span>
+        </label>
+
+        <button class="button confirm-form__submit" id="confirm-submit" type="submit" disabled>Confirm and start my Deep Dive</button>
+        <p class="confirm-form__msg" id="confirm-msg" aria-live="polite"></p>
+      </form>
+    </div>
+
+    {# Terminal success panel — replaces the form on a recorded confirmation #}
+    <div id="confirm-done" class="confirm-done" hidden aria-live="polite">
+      <p class="confirm__badge">You're all set</p>
+      <h2 class="confirm-done__title">Your Deep Dive is being researched now.</h2>
+      <p class="confirm-done__body">We're pulling the real, checkable details on the business you confirmed — the things you can't see from the inside — and writing them up by hand. It lands in your inbox, usually within one business day.</p>
+      <p class="confirm-done__body">Nothing more to do on your end. Keep an eye on your email — and check spam once, just in case.</p>
+      <p class="confirm-done__crosslink">Want someone to just fix what the report finds? <a href="https://sitesoncall.com">sitesoncall.com</a></p>
+    </div>
+
+    {# Page-level error panel — styled, never a raw crash #}
+    <div id="confirm-error" class="confirm-error" hidden aria-live="polite">
+      <h1 class="confirm-error__title" id="confirm-error-title">Something went sideways.</h1>
+      <p class="confirm-error__body" id="confirm-error-body"></p>
+      <p class="confirm-error__help">If this keeps happening, email <a href="mailto:info@untitledpublishers.com">info@untitledpublishers.com</a> with your receipt and we'll sort it out by hand.</p>
+    </div>
+
+  </div>
+</section>
+
+<script src="/assets/js/thank-you.js" defer></script>

@@ -736,6 +736,239 @@ img {
   margin: 1rem 0 0;
 }
 
+/* ==========================================================================
+   Post-payment confirmation page  (src/thank-you.njk + assets/js/thank-you.js)
+   Tokens only, zero new hex, zero !important. Selected state uses the accent
+   BORDER — never an accent background fill (hard rule). :focus-visible on every
+   interactive element (non-inheritance rule #1).
+   ========================================================================== */
+
+.confirm {
+  background: var(--color-bg);
+  padding: var(--section-padding);
+}
+
+.confirm__inner {
+  max-width: var(--container-narrow);
+  margin: 0 auto;
+}
+
+/* Small accent label — accent as TEXT on a light bg is permitted (2.2:1 fails
+   only on dark; this sits on white) */
+.confirm__badge {
+  display: inline-block;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: var(--color-accent);
+  margin: 0 0 0.75rem;
+}
+
+.confirm__title {
+  font-size: 2.25rem;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.confirm__lead {
+  line-height: 1.6;
+  margin: 0 0 2.5rem;
+}
+
+.confirm__loading .confirm__lead {
+  opacity: 0.75;
+}
+
+/* Candidate radio group */
+.confirm-candidates {
+  border: 0;
+  margin: 0 0 2rem;
+  padding: 0;
+}
+
+.confirm-candidates__legend {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding: 0;
+}
+
+/* A candidate card — default neutral border, obvious accent border when selected */
+.confirm-candidate {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-button);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  background: var(--color-bg);
+}
+
+.confirm-candidate.is-selected {
+  border: 2px solid var(--color-accent);
+  background: var(--color-bg-alt);
+  /* compensate the 1px→2px border so the card doesn't jump */
+  padding: calc(1.25rem - 1px) calc(1.5rem - 1px);
+}
+
+.confirm-candidate__radio {
+  margin-top: 0.3rem;
+  flex: 0 0 auto;
+}
+
+.confirm-candidate__radio:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.confirm-candidate__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.confirm-candidate__name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.confirm-candidate__addr {
+  line-height: 1.5;
+}
+
+.confirm-candidate__meta {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.confirm-candidate--none .confirm-candidate__name {
+  font-weight: 600;
+}
+
+/* Manual entry — revealed when "None of these" is picked */
+.confirm-manual {
+  background: var(--color-bg-alt);
+  border-radius: var(--radius-button);
+  padding: 1.5rem;
+  margin: 0 0 2rem;
+}
+
+.confirm-manual__intro {
+  margin: 0 0 1rem;
+  line-height: 1.6;
+}
+
+.confirm-manual__label {
+  display: block;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+}
+
+.confirm-manual__label:first-of-type {
+  margin-top: 0;
+}
+
+.confirm-input {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-button);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+.confirm-input:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Attestation — never pre-checked; required to enable submit */
+.confirm-attest {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  line-height: 1.5;
+  margin: 0 0 1.75rem;
+  font-weight: 600;
+}
+
+.confirm-attest input {
+  margin-top: 0.25rem;
+  flex: 0 0 auto;
+}
+
+.confirm-attest input:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.confirm-form__msg {
+  font-weight: 600;
+  margin: 1rem 0 0;
+}
+
+/* Terminal success panel — accent border, no fill; no-verdict copy */
+.confirm-done {
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-button);
+  padding: 2.5rem 2rem;
+}
+
+.confirm-done__title {
+  font-size: 1.9rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.confirm-done__body {
+  line-height: 1.7;
+  margin: 0 0 1rem;
+}
+
+.confirm-done__crosslink {
+  margin: 1.5rem 0 0;
+  font-size: 0.95rem;
+}
+
+.confirm-done__crosslink a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.confirm-done__crosslink a:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+/* Styled error panel — never a raw stack trace */
+.confirm-error__title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.confirm-error__body,
+.confirm-error__help {
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.confirm-error__help a,
+.confirm-error__body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.confirm-error__help a:focus-visible,
+.confirm-error__body a:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
 /* Responsive — cards and steps stack below 720px */
 @media (max-width: 720px) {
   .problem__cards,
@@ -748,6 +981,11 @@ img {
   }
 
   .section-heading {
+    font-size: 1.85rem;
+  }
+
+  .confirm__title,
+  .confirm-error__title {
     font-size: 1.85rem;
   }
 }
