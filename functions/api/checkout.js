@@ -80,6 +80,23 @@ export async function onRequestPost({ request, env }) {
   // Option B: carry the scanned site through payment for the confirmation flow.
   if (scannedUrl) form.set("metadata[scanned_url]", scannedUrl);
 
+  // Buyer-confirmation gate inputs (docs/BOT_ARCHITECTURE.md "Paid tier — the flow"):
+  // the /thank-you/ gate queries Google Places with these to show the buyer their
+  // own listing to confirm. Both REQUIRED (optional=false) — a report can't be
+  // aimed without them. Stripe rule: custom_fields[].key must be ALPHANUMERIC (no
+  // underscores), so keys are `businessname` / `citystate`; label.custom caps at
+  // 50 chars. confirm-business.js reads these exact keys.
+  form.set("custom_fields[0][key]", "businessname");
+  form.set("custom_fields[0][label][type]", "custom");
+  form.set("custom_fields[0][label][custom]", "Business name");
+  form.set("custom_fields[0][type]", "text");
+  form.set("custom_fields[0][optional]", "false");
+  form.set("custom_fields[1][key]", "citystate");
+  form.set("custom_fields[1][label][type]", "custom");
+  form.set("custom_fields[1][label][custom]", "City and state");
+  form.set("custom_fields[1][type]", "text");
+  form.set("custom_fields[1][optional]", "false");
+
   let stripeRes, stripeBody;
   try {
     stripeRes = await fetch(STRIPE_SESSIONS_URL, {
