@@ -1,6 +1,9 @@
 .env
 .env.local
 .env.*.local
+.dev.vars
+.dev.vars.*
 _site
 node_modules
 .DS_Store
+.wrangler
