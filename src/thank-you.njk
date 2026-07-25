@@ -55,7 +55,20 @@ permalink: "/thank-you/"
     <div id="confirm-done" class="confirm-done" hidden aria-live="polite">
       <p class="confirm__badge">You're all set</p>
       <h2 class="confirm-done__title">Your Deep Dive is being researched now.</h2>
-      <p class="confirm-done__body">We're pulling the real, checkable details on the business you confirmed — the things you can't see from the inside — and writing them up by hand. It lands in your inbox, usually within one business day.</p>
+      {# Computed delivery deadline (report_due_display), filled by thank-you.js.
+         Falls back to "within 3 business days" if the value is ever missing. #}
+      <p class="confirm-done__due" id="confirm-due"></p>
+
+      {# GBP preview — the Google data the free scan couldn't reach. Populated from
+         the confirmed candidate already in memory (no new API call). Places method only. #}
+      <div id="confirm-gbp" class="confirm-gbp" hidden>
+        <h3 class="confirm-gbp__title">A first look at your Google listing</h3>
+        <p class="confirm-gbp__intro">This is the Google Business Profile data the free scan couldn't reach — a preview. Your full Deep Dive goes deeper.</p>
+        <ul class="confirm-gbp__rows" id="confirm-gbp-rows"></ul>
+        <p class="confirm-gbp__finding" id="confirm-gbp-finding" hidden></p>
+      </div>
+
+      <p class="confirm-done__body">We're pulling the real, checkable details on the business you confirmed — the things you can't see from the inside — and writing them up by hand.</p>
       <p class="confirm-done__body">Nothing more to do on your end. Keep an eye on your email — and check spam once, just in case.</p>
       <p class="confirm-done__crosslink">Want someone to just fix what the report finds? <a href="https://sitesoncall.com">sitesoncall.com</a></p>
     </div>

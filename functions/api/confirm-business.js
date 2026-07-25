@@ -36,6 +36,45 @@ const STRIPE_BASE = "https://api.stripe.com/v1";
 const PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 const MAX_CANDIDATES = 4;
 
+/* ------------------------- delivery deadline config ------------------------ */
+// The deadline is computed ONCE at confirmation and stored on the PaymentIntent.
+// It is the single source of truth for the page, the email, and any monitoring.
+// TODO(Irene): confirm the delivery timezone. Every deadline renders in THIS zone —
+// one stated deadline, one zone, named explicitly in the buyer-facing text. We do
+// NOT use the buyer's local time.
+const DELIVERY_TIMEZONE = "America/Chicago";
+const DELIVERY_ZONE_LABEL = "Central"; // human label appended to the display string
+const DELIVERY_SLA_BUSINESS_DAYS = 3; // internal SLA
+const DELIVERY_HOUR = 17; // 5:00 PM, end of the 3rd business day
+
+// US federal holidays 2026–2027, listed on their OBSERVED weekday. A holiday that
+// lands on a weekend is observed on the adjacent Friday/Monday — that observed day
+// is when the business is closed, so that's the date to skip. Extend as years roll.
+const US_HOLIDAYS = new Set([
+  // 2026
+  "2026-01-01", // New Year's Day
+  "2026-01-19", // MLK Day
+  "2026-02-16", // Presidents' Day
+  "2026-05-25", // Memorial Day
+  "2026-06-19", // Juneteenth
+  "2026-07-03", // Independence Day (Jul 4 is Sat → observed Fri Jul 3)
+  "2026-09-07", // Labor Day
+  "2026-11-26", // Thanksgiving
+  "2026-11-27", // Day after Thanksgiving
+  "2026-12-25", // Christmas Day
+  // 2027
+  "2027-01-01", // New Year's Day
+  "2027-01-18", // MLK Day
+  "2027-02-15", // Presidents' Day
+  "2027-05-31", // Memorial Day
+  "2027-06-18", // Juneteenth (Jun 19 is Sat → observed Fri Jun 18)
+  "2027-07-05", // Independence Day (Jul 4 is Sun → observed Mon Jul 5)
+  "2027-09-06", // Labor Day
+  "2027-11-25", // Thanksgiving
+  "2027-11-26", // Day after Thanksgiving
+  "2027-12-24", // Christmas Day (Dec 25 is Sat → observed Fri Dec 24)
+]);
+
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
     status,
@@ -142,9 +181,10 @@ async function findCandidates(business, placesKey) {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": placesKey, // server-side ONLY — never returned or logged
         // Field mask keeps the response tight. rating/userRatingCount put this on
-        // the Enterprise SKU (BOT_ARCHITECTURE.md "tier trap"); phone rides the
-        // same tier, so it's included "if cheaply available" per the task.
-        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.nationalPhoneNumber",
+        // the Enterprise SKU (BOT_ARCHITECTURE.md "tier trap"); phone/category/website
+        // ride the same tier, so they're included at no extra SKU jump — they feed the
+        // post-confirmation GBP preview on /thank-you/ (still ONE Places call, no extra).
+        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.primaryTypeDisplayName,places.types,places.websiteUri",
       },
       body: JSON.stringify({ textQuery: query, maxResultCount: MAX_CANDIDATES }),
     });
@@ -170,11 +210,89 @@ async function findCandidates(business, placesKey) {
     if (typeof p.rating === "number") c.rating = p.rating;
     if (typeof p.userRatingCount === "number") c.user_ratings_total = p.userRatingCount;
     if (p.nationalPhoneNumber) c.formatted_phone_number = p.nationalPhoneNumber;
+    // GBP-preview extras — reused client-side after confirmation, no second API call.
+    if (p.primaryTypeDisplayName && p.primaryTypeDisplayName.text) c.category = p.primaryTypeDisplayName.text;
+    if (Array.isArray(p.types) && p.types.length) c.types = p.types;
+    if (p.websiteUri) c.website = p.websiteUri;
     return c;
   }).filter((c) => c.place_id); // a candidate with no place_id can't be confirmed against
 
   if (!candidates.length) return { placesStatus: "zero_results", candidates: [] };
   return { placesStatus: "ok", candidates };
+}
+
+/* ----------------------------- delivery deadline --------------------------- */
+
+function pad2(n) { return String(n).padStart(2, "0"); }
+function dateKey(y, m, d) { return `${y}-${pad2(m)}-${pad2(d)}`; }
+
+// Calendar-date math runs in UTC purely for day-of-week + increment; that's
+// timezone-independent once the starting calendar date is pinned in the target zone.
+function isBusinessDay(y, m, d) {
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0 Sun … 6 Sat
+  if (dow === 0 || dow === 6) return false;
+  if (US_HOLIDAYS.has(dateKey(y, m, d))) return false;
+  return true;
+}
+
+function addCalendarDay(part) {
+  const dt = new Date(Date.UTC(part.y, part.m - 1, part.d));
+  dt.setUTCDate(dt.getUTCDate() + 1);
+  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+}
+
+// The calendar date (in `timeZone`) of a given instant.
+function zonedCalendarDate(instant, timeZone) {
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone, year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(instant).reduce((a, x) => ((a[x.type] = x.value), a), {});
+  return { y: +p.year, m: +p.month, d: +p.day };
+}
+
+// Offset in minutes (local − UTC) of `timeZone` at `instant`. e.g. CDT → -300.
+function zoneOffsetMinutes(instant, timeZone) {
+  const p = new Intl.DateTimeFormat("en-US", {
+    timeZone, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(instant).reduce((a, x) => ((a[x.type] = x.value), a), {});
+  const asUTC = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+  return Math.round((asUTC - instant.getTime()) / 60000);
+}
+
+// The UTC instant for a wall-clock time in `timeZone` (DST-safe via one refine pass).
+function zonedWallTimeToInstant(y, m, d, hh, timeZone) {
+  const guess = Date.UTC(y, m - 1, d, hh, 0, 0);
+  const off = zoneOffsetMinutes(new Date(guess), timeZone);
+  let instant = new Date(guess - off * 60000);
+  const off2 = zoneOffsetMinutes(instant, timeZone);
+  if (off2 !== off) instant = new Date(guess - off2 * 60000);
+  return instant;
+}
+
+function offsetIso(mins) {
+  const sign = mins <= 0 ? "-" : "+"; // -300 (behind UTC) → "-05:00"
+  const a = Math.abs(mins);
+  return `${sign}${pad2(Math.floor(a / 60))}:${pad2(a % 60)}`;
+}
+
+/* From a confirmation instant: start the day AFTER confirmation, count
+   DELIVERY_SLA_BUSINESS_DAYS business days (skipping weekends + US_HOLIDAYS), land on
+   DELIVERY_HOUR:00 in DELIVERY_TIMEZONE. Returns { iso, display }. */
+function computeDeliveryDeadline(nowInstant) {
+  let cur = zonedCalendarDate(nowInstant, DELIVERY_TIMEZONE);
+  let counted = 0;
+  while (counted < DELIVERY_SLA_BUSINESS_DAYS) {
+    cur = addCalendarDay(cur);
+    if (isBusinessDay(cur.y, cur.m, cur.d)) counted++;
+  }
+  const instant = zonedWallTimeToInstant(cur.y, cur.m, cur.d, DELIVERY_HOUR, DELIVERY_TIMEZONE);
+  const iso = `${dateKey(cur.y, cur.m, cur.d)}T${pad2(DELIVERY_HOUR)}:00:00${offsetIso(zoneOffsetMinutes(instant, DELIVERY_TIMEZONE))}`;
+  const datePart = new Intl.DateTimeFormat("en-US", {
+    timeZone: DELIVERY_TIMEZONE, weekday: "long", month: "long", day: "numeric",
+  }).format(instant);
+  const display = `${datePart} at 5:00 PM ${DELIVERY_ZONE_LABEL}`;
+  return { iso, display };
 }
 
 /* ---------------------------------- GET ------------------------------------ */
@@ -254,7 +372,11 @@ export async function onRequestPost({ request, env }) {
     ? ((typeof payload.address === "string" && payload.address.trim()) || "")
     : manualAddress;
 
-  const attestedAt = new Date().toISOString();
+  const now = new Date();
+  const attestedAt = now.toISOString();
+  // Deadline computed ONCE here and stored — the single source of truth for the
+  // page, the (future) email, and any monitoring. Never recomputed downstream.
+  const deadline = computeDeliveryDeadline(now);
 
   // Stripe metadata values are strings; keep each well under the 500-char cap.
   const form = new URLSearchParams();
@@ -265,6 +387,8 @@ export async function onRequestPost({ request, env }) {
   form.set("metadata[ownership_attested]", "true");
   form.set("metadata[attested_at]", attestedAt);
   form.set("metadata[confirmation_method]", method);
+  form.set("metadata[report_due_at]", deadline.iso);
+  form.set("metadata[report_due_display]", deadline.display.slice(0, 480));
 
   const upd = await stripePost(`/payment_intents/${encodeURIComponent(paymentIntentId)}`, key, form);
   if (!upd.ok || !upd.body || upd.body.error) {
@@ -275,5 +399,10 @@ export async function onRequestPost({ request, env }) {
     return json({ status: "error", code: "record_failed", message: "We couldn't save your confirmation just now. Please try again in a moment." }, 502);
   }
 
-  return json({ status: "ok", confirmation_method: method });
+  return json({
+    status: "ok",
+    confirmation_method: method,
+    report_due_at: deadline.iso,
+    report_due_display: deadline.display,
+  });
 }

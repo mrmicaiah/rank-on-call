@@ -925,9 +925,75 @@ img {
   margin: 0.5rem 0 1rem;
 }
 
+/* The computed deadline — the most important line in the panel, so it leads */
+.confirm-done__due {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+}
+
+.confirm-done__due strong {
+  font-weight: 700;
+}
+
 .confirm-done__body {
   line-height: 1.7;
   margin: 0 0 1rem;
+}
+
+/* GBP preview — the Google data the free scan couldn't reach. Sits inside the
+   success panel; a light-alt inset with an accent rule, never an accent fill. */
+.confirm-gbp {
+  background: var(--color-bg-alt);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-button);
+  padding: 1.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.confirm-gbp__title {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+}
+
+.confirm-gbp__intro {
+  line-height: 1.6;
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+
+.confirm-gbp__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.confirm-gbp__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  padding: 0.5rem 0;
+}
+
+.confirm-gbp__row + .confirm-gbp__row {
+  border-top: 1px solid var(--color-bg);
+}
+
+.confirm-gbp__label {
+  font-weight: 600;
+  flex: 0 0 9rem;
+}
+
+.confirm-gbp__value {
+  flex: 1 1 12rem;
+  overflow-wrap: anywhere;
+}
+
+/* The website-mismatch finding — stated plainly, weighted like a real flag */
+.confirm-gbp__finding {
+  font-weight: 600;
+  line-height: 1.6;
+  margin: 1rem 0 0;
 }
 
 .confirm-done__crosslink {

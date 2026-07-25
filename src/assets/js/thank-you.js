@@ -30,7 +30,9 @@
 
   // Selection state, held in memory — the submit reads from here, never the DOM text.
   var selected = null; // null | {manual:true} | {place_id, name, address}
+  var selectedCandidate = null; // the full confirmed Places candidate (for the GBP preview)
   var candidateData = []; // parallel to rendered radios, indexed by value
+  var scanned = ""; // the URL the buyer scanned, echoed by the GET — for the website-match check
 
   function el(tag, className, text) {
     var node = document.createElement(tag);
@@ -41,6 +43,22 @@
 
   function show(node) { if (node) node.hidden = false; }
   function hide(node) { if (node) node.hidden = true; }
+  function clear(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
+
+  // Normalize a URL to a bare host for comparison ("https://www.Foo.com/x" → "foo.com").
+  function hostOf(u) {
+    if (!u) return "";
+    try { return new URL(u).host.replace(/^www\./i, "").toLowerCase(); }
+    catch (e) {
+      try { return new URL("https://" + u).host.replace(/^www\./i, "").toLowerCase(); }
+      catch (e2) { return ""; }
+    }
+  }
+
+  // "roofing_contractor" → "Roofing contractor" for display.
+  function prettyType(t) {
+    return String(t).replace(/_/g, " ").replace(/^\w/, function (ch) { return ch.toUpperCase(); });
+  }
 
   function getSessionId() {
     try {
@@ -93,7 +111,7 @@
     label.appendChild(textWrap);
 
     radio.addEventListener("change", function () {
-      selectCard(label, { place_id: c.place_id, name: c.name || "", address: c.formatted_address || "" });
+      selectCard(label, { place_id: c.place_id, name: c.name || "", address: c.formatted_address || "" }, c);
     });
 
     return label;
@@ -119,7 +137,7 @@
     label.appendChild(textWrap);
 
     radio.addEventListener("change", function () {
-      selectCard(label, { manual: true });
+      selectCard(label, { manual: true }, null);
     });
 
     return label;
@@ -130,10 +148,11 @@
     for (var i = 0; i < cards.length; i++) cards[i].classList.remove("is-selected");
   }
 
-  function selectCard(labelEl, choice) {
+  function selectCard(labelEl, choice, candidate) {
     clearSelectedStyling();
     labelEl.classList.add("is-selected");
     selected = choice;
+    selectedCandidate = candidate || null; // full Places object for the GBP preview
     if (choice && choice.manual) {
       show(manualEl);
     } else {
@@ -160,6 +179,7 @@
   function renderCandidates(data) {
     hide(loadingEl);
     show(mainEl);
+    scanned = data.scannedUrl || ""; // held for the post-confirmation website-match check
 
     // Tune the prompt to whether Google gave us anything to pick from.
     var haveCandidates = data.candidates && data.candidates.length;
@@ -179,7 +199,7 @@
       candidatesEl.appendChild(none);
       var noneRadio = none.querySelector("input");
       noneRadio.checked = true;
-      selectCard(none, { manual: true });
+      selectCard(none, { manual: true }, null);
       return;
     }
 
@@ -188,6 +208,76 @@
       candidatesEl.appendChild(buildCandidateCard(c, i));
     });
     candidatesEl.appendChild(buildNoneCard(data.candidates.length));
+  }
+
+  /* ------------------------- success-panel population ---------------------- */
+
+  // The computed deadline (report_due_display). Falls back to a plain window if absent.
+  function fillDeadline(display) {
+    var due = document.getElementById("confirm-due");
+    clear(due);
+    var text = display && String(display).trim();
+    if (text) {
+      due.appendChild(document.createTextNode("It lands in your inbox by "));
+      var strong = document.createElement("strong");
+      strong.textContent = text; // untrusted-safe; also the single source of truth
+      due.appendChild(strong);
+      due.appendChild(document.createTextNode("."));
+    } else {
+      due.appendChild(document.createTextNode("It lands in your inbox within 3 business days."));
+    }
+  }
+
+  // GBP preview from the confirmed candidate already in memory — NO new API call.
+  // Places method only; manual confirmations carry no candidate, so nothing renders.
+  function renderGbpPreview(c) {
+    if (!c) return;
+    var panel = document.getElementById("confirm-gbp");
+    var rows = document.getElementById("confirm-gbp-rows");
+    var finding = document.getElementById("confirm-gbp-finding");
+    clear(rows);
+    finding.hidden = true;
+    finding.textContent = "";
+
+    function row(label, value) {
+      var li = el("li", "confirm-gbp__row");
+      li.appendChild(el("span", "confirm-gbp__label", label));
+      li.appendChild(el("span", "confirm-gbp__value", value)); // textContent — untrusted
+      rows.appendChild(li);
+    }
+
+    var shownAny = false;
+
+    if (typeof c.rating === "number") {
+      var r = c.rating.toFixed(1);
+      if (typeof c.user_ratings_total === "number") {
+        r += " (" + c.user_ratings_total + (c.user_ratings_total === 1 ? " review" : " reviews") + ")";
+      }
+      row("Google rating", r);
+      shownAny = true;
+    }
+
+    var cat = c.category || (Array.isArray(c.types) && c.types.length ? c.types.map(prettyType).join(", ") : "");
+    if (cat) { row("Category", cat); shownAny = true; }
+
+    // Website-match: a real finding when the GBP site differs from what they scanned.
+    if (c.website) {
+      row("Website on Google", c.website);
+      shownAny = true;
+      var gbpHost = hostOf(c.website);
+      var scannedHost = hostOf(scanned);
+      if (gbpHost && scannedHost && gbpHost !== scannedHost) {
+        finding.textContent = "Heads up: the website on your Google listing (" + gbpHost + ") isn't the site you scanned (" + scannedHost + "). Google may be pointing your searchers somewhere you didn't expect — the report looks at why.";
+        finding.hidden = false;
+      }
+    } else if (scanned) {
+      // No website on the Business Profile at all — itself worth flagging.
+      finding.textContent = "Heads up: your Google listing doesn't show a website — everyone who finds you on Google has no link to click. The full report covers fixing that.";
+      finding.hidden = false;
+      shownAny = true;
+    }
+
+    if (shownAny) panel.hidden = false;
   }
 
   /* -------------------------------- submit --------------------------------- */
@@ -225,6 +315,8 @@
       .then(function (res) { return res.json().then(function (b) { return { ok: res.ok, body: b }; }); })
       .then(function (r) {
         if (r.ok && r.body && r.body.status === "ok") {
+          fillDeadline(r.body.report_due_display);
+          renderGbpPreview(selectedCandidate);
           hide(mainEl);
           show(doneEl);
           doneEl.focus && doneEl.focus();
