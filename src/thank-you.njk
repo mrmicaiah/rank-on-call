@@ -58,6 +58,9 @@ permalink: "/thank-you/"
       {# Computed delivery deadline (report_due_display), filled by thank-you.js.
          Falls back to "within 3 business days" if the value is ever missing. #}
       <p class="confirm-done__due" id="confirm-due"></p>
+      {# Pairs with the deadline so the wait reads as deliberate, not slow — the
+         per-report human review is what the time is for (matches the index.njk claim). #}
+      <p class="confirm-done__body">Every report gets read by a person before it's sent — that's what the time is for.</p>
 
       {# GBP preview — the Google data the free scan couldn't reach. Populated from
          the confirmed candidate already in memory (no new API call). Places method only. #}
