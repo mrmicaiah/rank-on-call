@@ -335,6 +335,64 @@
       });
   }
 
+  /* --------------------- optional intent fields (post-confirm) ------------- */
+  // Collected AFTER the confirmation is recorded. Optional; a failure here never
+  // touches the already-recorded confirmation or the report.
+  function handleIntentSubmit(e) {
+    e.preventDefault();
+    var intentForm = document.getElementById("intent-form");
+    var msg = document.getElementById("intent-msg");
+    var thanks = document.getElementById("intent-thanks");
+    var submitBtn = document.getElementById("intent-submit");
+    msg.textContent = "";
+
+    function val(id) { var n = document.getElementById(id); return n ? n.value.trim() : ""; }
+    function radioVal(name) { var n = document.querySelector('input[name="' + name + '"]:checked'); return n ? n.value : ""; }
+
+    var body = {
+      session_id: getSessionId(),
+      intent_service: val("intent-service"),
+      intent_target_area: val("intent-target-area"),
+      intent_paid_leads: radioVal("intent_paid_leads"),
+      intent_pain: val("intent-pain"),
+      intent_competitors: val("intent-competitors"),
+    };
+
+    var hasAny = body.intent_service || body.intent_target_area || body.intent_paid_leads || body.intent_pain || body.intent_competitors;
+    if (!hasAny) {
+      // Nothing filled — just thank them, no pointless write.
+      hide(intentForm);
+      show(thanks);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    var restore = submitBtn.textContent;
+    submitBtn.textContent = "Sending…";
+
+    fetch("/api/intake", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+      .then(function (res) { return res.json().then(function (b) { return { ok: res.ok, body: b }; }); })
+      .then(function (r) {
+        if (r.ok && r.body && r.body.status === "ok") {
+          hide(intentForm);
+          show(thanks);
+        } else {
+          submitBtn.disabled = false;
+          submitBtn.textContent = restore;
+          msg.textContent = (r.body && r.body.message) || "We couldn't save that just now — your report is unaffected. Feel free to try again.";
+        }
+      })
+      .catch(function () {
+        submitBtn.disabled = false;
+        submitBtn.textContent = restore;
+        msg.textContent = "We couldn't save that just now — your report is unaffected. Feel free to try again.";
+      });
+  }
+
   /* --------------------------------- init ---------------------------------- */
 
   function init() {
@@ -352,6 +410,9 @@
       attestBox.addEventListener("change", refreshSubmit);
       manualAddress.addEventListener("input", refreshSubmit);
     }
+
+    var intentForm = document.getElementById("intent-form");
+    if (intentForm) intentForm.addEventListener("submit", handleIntentSubmit);
 
     fetch("/api/confirm-business?session_id=" + encodeURIComponent(sessionId), {
       headers: { "Accept": "application/json" },

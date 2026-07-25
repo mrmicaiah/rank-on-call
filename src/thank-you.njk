@@ -70,6 +70,42 @@ permalink: "/thank-you/"
 
       <p class="confirm-done__body">We're pulling the real, checkable details on the business you confirmed — the things you can't see from the inside — and writing them up by hand.</p>
       <p class="confirm-done__body">Nothing more to do on your end. Keep an eye on your email — and check spam once, just in case.</p>
+
+      {# OPTIONAL intent fields — collected AFTER the confirmation is already recorded.
+         They sharpen the report; they never gate or delay it. If the buyer closes the
+         tab without touching them, we still have everything needed. Writes via
+         POST /api/intake (separate endpoint), which appends to the same PaymentIntent. #}
+      <section id="intent" class="intent">
+        <h3 class="intent__title">A few things that sharpen your report <span class="intent__optional">(optional)</span></h3>
+        <p class="intent__intro">Answer whatever you know off the top of your head, or skip it — your Deep Dive is already on its way. These just help us aim the research at what matters most to you.</p>
+
+        <form id="intent-form" class="intent-form" novalidate>
+          <label class="intent-form__label" for="intent-service">The #1 service you want more of</label>
+          <input class="confirm-input" id="intent-service" name="intent_service" type="text" autocomplete="off" placeholder="e.g. gutter installs">
+
+          <label class="intent-form__label" for="intent-target-area">The city or area you most want to win</label>
+          <input class="confirm-input" id="intent-target-area" name="intent_target_area" type="text" autocomplete="off" placeholder="e.g. east side of Nashville">
+
+          <fieldset class="intent-form__group">
+            <legend class="intent-form__label">Are you currently paying for leads or ads?</legend>
+            <label class="intent-radio"><input type="radio" name="intent_paid_leads" value="yes"> Yes</label>
+            <label class="intent-radio"><input type="radio" name="intent_paid_leads" value="no"> No</label>
+            <label class="intent-radio"><input type="radio" name="intent_paid_leads" value="not sure"> Not sure</label>
+          </fieldset>
+
+          <label class="intent-form__label" for="intent-pain">Anything already bugging you about your site?</label>
+          <textarea class="confirm-input intent-form__textarea" id="intent-pain" name="intent_pain" rows="3" placeholder="Whatever's been nagging at you"></textarea>
+
+          <label class="intent-form__label" for="intent-competitors">1–2 competitors you lose work to</label>
+          <input class="confirm-input" id="intent-competitors" name="intent_competitors" type="text" autocomplete="off" placeholder="Names or websites are both fine">
+
+          <button class="button intent-form__submit" id="intent-submit" type="submit">Send these along</button>
+          <p class="intent-form__msg" id="intent-msg" aria-live="polite"></p>
+        </form>
+
+        <p id="intent-thanks" class="intent__thanks" hidden>Got it — thanks. That'll help us sharpen your report.</p>
+      </section>
+
       <p class="confirm-done__crosslink">Want someone to just fix what the report finds? <a href="https://sitesoncall.com">sitesoncall.com</a></p>
     </div>
 

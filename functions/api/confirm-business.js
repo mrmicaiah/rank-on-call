@@ -39,9 +39,9 @@ const MAX_CANDIDATES = 4;
 /* ------------------------- delivery deadline config ------------------------ */
 // The deadline is computed ONCE at confirmation and stored on the PaymentIntent.
 // It is the single source of truth for the page, the email, and any monitoring.
-// TODO(Irene): confirm the delivery timezone. Every deadline renders in THIS zone —
-// one stated deadline, one zone, named explicitly in the buyer-facing text. We do
-// NOT use the buyer's local time.
+// Delivery timezone — America/Chicago, confirmed permanent. Every deadline renders in
+// THIS zone: one stated deadline, one zone, named explicitly in the buyer-facing text.
+// The buyer's local time is never used.
 const DELIVERY_TIMEZONE = "America/Chicago";
 const DELIVERY_ZONE_LABEL = "Central"; // human label appended to the display string
 const DELIVERY_SLA_BUSINESS_DAYS = 3; // internal SLA
@@ -75,7 +75,10 @@ const US_HOLIDAYS = new Set([
   "2027-12-24", // Christmas Day (Dec 25 is Sat → observed Fri Dec 24)
 ]);
 
-function json(obj, status = 200) {
+// Exported for reuse by sibling endpoints (e.g. intake.js) — mirrors the
+// scan.js → checkout.js helper-sharing pattern. Only reserved onRequest* names
+// are treated as routes by Pages; these plain exports are ignored by the router.
+export function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8" },
@@ -92,7 +95,7 @@ async function stripeGet(path, key) {
   return { ok: res.ok, status: res.status, body };
 }
 
-async function stripePost(path, key, form) {
+export async function stripePost(path, key, form) {
   const res = await fetch(`${STRIPE_BASE}${path}`, {
     method: "POST",
     headers: {
@@ -107,7 +110,7 @@ async function stripePost(path, key, form) {
 
 /* Retrieve the session with its PaymentIntent expanded, and gate on paid status.
    Returns { error: Response } on any failure, or { session } on success. */
-async function loadPaidSession(sessionId, key) {
+export async function loadPaidSession(sessionId, key) {
   if (!sessionId || typeof sessionId !== "string") {
     return { error: json({ status: "error", code: "missing_session", message: "We couldn't find your order — no session was provided." }, 400) };
   }
