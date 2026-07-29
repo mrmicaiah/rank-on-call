@@ -71,11 +71,36 @@ What it does instead: **reports what it checked and what it found, then names th
 
 ## Paid tier — the flow
 
-1. Buyer pays via **Stripe Payment Link**. Business name and city collected as **Stripe custom fields** at checkout.
+1. Buyer clicks through from the **free scan results** and POSTs to **`/api/checkout`** (`functions/api/checkout.js`), which creates a dynamic **Stripe Checkout Session** — there is **no Stripe Payment Link**, and none is linked from the site. The session collects **two required `custom_fields`** — keys **`businessname`** and **`citystate`** (Stripe requires alphanumeric keys, no underscores) — and carries the scanned URL in session **metadata** (`scanned_url`). Its `success_url` routes to **`/thank-you/?session_id={CHECKOUT_SESSION_ID}`**.
 2. System queries the **Places API** with name + city.
 3. **WRONG-BUSINESS CONFIRMATION — mandatory.** Places returns candidates. The buyer is shown **2–4 matching listings** with name, address, and rating, and **must click the one that is theirs** before the report generates. **No auto-delivery on an unconfirmed match, ever.**
 4. **If none of the candidates match**, the buyer selects a "none of these look right" option. This routes to manual handling — the report is not generated automatically. This is the escape hatch for the case where Places returns nothing usable; it must never force a guess.
 5. Report generates against the **confirmed `place_id`**.
+
+### What the confirmation gate writes to PaymentIntent metadata
+
+The confirmation gate (`functions/api/confirm-business.js`) records the buyer's choice on the **PaymentIntent** metadata — Checkout Sessions are immutable after creation, so the PaymentIntent is where post-checkout state lives (zero new infra for v1; it also surfaces in the Stripe dashboard next to the payment). **This is the contract the report generator reads** — written down here so it doesn't live only in source:
+
+| Key | Written by | Meaning |
+|---|---|---|
+| `confirmed_place_id` | confirm POST | Google Places `place_id` the buyer clicked (empty on manual) |
+| `confirmed_name` | confirm POST | Business name as confirmed |
+| `confirmed_address` | confirm POST | Address of the confirmed listing (or manually entered) |
+| `confirmed_phone` | confirm POST | Manual phone, when supplied on the "none of these" path (absent otherwise) |
+| `confirmation_method` | confirm POST | `"places"` or `"manual"` |
+| `ownership_attested` | confirm POST | `"true"` — buyer attested owner/authorized rep |
+| `attested_at` | confirm POST | ISO 8601 timestamp of the attestation |
+| `report_due_at` | confirm POST | Delivery deadline, ISO 8601 with offset (America/Chicago) |
+| `report_due_display` | confirm POST | Human deadline string, e.g. "Wednesday, July 29 at 5:00 PM Central" |
+| `intent_service` | intake POST | Optional: #1 service the buyer wants more of |
+| `intent_target_area` | intake POST | Optional: city/area they most want to win |
+| `intent_paid_leads` | intake POST | Optional: `yes` / `no` / `not sure` |
+| `intent_pain` | intake POST | Optional: what's already bugging them about their site |
+| `intent_competitors` | intake POST | Optional: 1–2 competitors they lose work to |
+
+The five `intent_*` keys are optional and collected **after** confirmation (`functions/api/intake.js`); they are absent if the buyer skipped them.
+
+**There is no database. Stripe PaymentIntent metadata IS the store** for v1 — which means the report generator reads this contract straight off the PaymentIntent, and everything here lives within Stripe's metadata limits: **max 50 keys per object, 40 characters per key, 500 characters per value.** All values are strings, and the endpoints truncate each to the 500-char cap so a long free-text answer can never cause a failed write. The key count above (13 defined keys, plus `confirmed_phone`) sits well under 50, leaving headroom for later additions.
 
 ---
 
