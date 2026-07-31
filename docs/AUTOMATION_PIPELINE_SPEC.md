@@ -92,7 +92,7 @@ Billing note: requesting `reviews` promotes the ENTIRE Place Details call to the
 
 ## 5. Deterministic safety layer
 
-The checkpoint-4 sweep. Pure functions, no model calls, binary pass/fail. This layer — NOT the model reviewer — is what earns the right to send unread, because it shares no blind spots with the generator. `lib/report-precheck.js` + `lib/report-precheck.test.js` exist in the repo as an UNTRACKED, UNVERIFIED head-start (never run, wired to nothing). Treat as a starting point to inspect, not a dependency; it validates the current report format and will need rework if the format changes.
+The checkpoint-4 sweep. Pure functions, no model calls, binary pass/fail. This layer — NOT the model reviewer — is what earns the right to send unread, because it shares no blind spots with the generator. `lib/report-precheck.js` + `lib/report-precheck.test.js` exist in the repo as an UNVERIFIED head-start (never run, wired to nothing). Treat as a starting point to inspect, not a dependency; it validates the current report format and will need rework if the format changes.
 
 Checks (each a pure function over the drafted report):
 - **Leaked phone** — no phone-number-shaped string in output.
