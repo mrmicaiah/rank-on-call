@@ -77,7 +77,7 @@ Both landed 2026-07-25 in commit `fe132db`; `git log -S` confirms neither string
 
 | Capability | How this worker gets it |
 |---|---|
-| Research procedure | **Owned copy in this repo** of `deep-dive-client-report` v2.1 — see the fork note below |
+| Research procedure | **Owned copy in this repo**, forked from **`web-deep-dive`** — `docs/RESEARCH_PROCEDURE_v3.0-roc.md`. ⚠️ Source corrected 2026-08-01, see below |
 | Ranking data | **DataForSEO directly**, HTTP Basic auth, ROC's own `DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD` |
 | Google Business Profile | **Places API (New) directly**, existing `GOOGLE_PLACES_API_KEY` |
 | Report generation | **Anthropic API directly**, ROC's own key |
@@ -85,11 +85,17 @@ Both landed 2026-07-25 in commit `fe132db`; `git log -S` confirms neither string
 
 Rationale: fulfillment must not break because someone redeployed a productivity worker, rotated a shared secret, or drained a shared API balance. A paid order is a contractual obligation with a **24-hour deadline** attached; it cannot hang off infrastructure this project doesn't control. **The shorter window makes this argument stronger, not weaker** — there is no longer a weekend of slack in which someone else's outage can be noticed and worked around.
 
-#### ⚠️ The owned copy of the skill must be FORKED, not copied
+#### ⚠️ CORRECTED 2026-08-01 — the fork source is `web-deep-dive`, NOT `deep-dive-client-report`
 
-`deep-dive-client-report` v2.1 is excellent and should be the basis of the repo copy. **It is also written for the old model and contradicts §1.1 in its own text.** A verbatim copy makes the worker generate drafts for a reviewer who doesn't exist.
+**Irene ruled on 2026-08-01 that `web-deep-dive` is the source of truth.** `deep-dive-client-report` is a **degraded, never-completed copy** and must not be used as the basis of the fork.
 
-**Required edits to the repo copy, at minimum:**
+**The fork is written: `docs/RESEARCH_PROCEDURE_v3.0-roc.md` (DRAFT).** Everything below in this subsection was written against the wrong source and is superseded by that document — it is kept only because the *kind* of edits it demanded (delivery framing, tool bindings) still had to be made, and because the table below records where they came from.
+
+> ⚠️ **This correction collides with a LOCKED decision.** `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 states the rebuild is **DONE** and names *"the rebuilt skill is `deep-dive-client-report` v2.1, and its research set matches §4"* — while also describing `web-deep-dive`'s owner-identity problems as **STRUCTURAL, not incidental**, and recording that it "remains the internal sales-prep skill and is unchanged."
+>
+> Both halves of that item are now wrong: the rebuild was not done, and the source we are forking from is the one that item warned about. **The strip that item claimed had already happened must actually be performed now** — which is exactly what `RESEARCH_PROCEDURE_v3.0-roc.md` does, and why its privacy section is the largest part of it. §1 item 5 needs its own dispatch; this document may not edit a locked decision in another spec.
+
+**Required edits, as originally written against `deep-dive-client-report` v2.1 — retained for the audit trail:**
 
 | Location in v2.1 | What it says | Required change |
 |---|---|---|
@@ -102,9 +108,7 @@ Rationale: fulfillment must not break because someone redeployed a productivity 
 
 **Everything else in v2.1 transfers unchanged and should be preserved carefully** — the deleted-owner-identity spine (§2), the four hard locks (§3), the research set (§4), the CUT list (§5), the fetch scar (§6), the voice rules and banned words (§7), and the report template (§8). That material is hard-won and re-deriving it would lose things. **The fork edits the delivery framing and the tool bindings. It does not touch the research or the locks.**
 
-**Version discipline:** the repo copy is a fork with its own version (suggest `deep-dive-client-report v3.0-roc`), and every generated report records which version produced it. The MCP-hosted v2.1 and the repo fork will drift; that is expected and fine, but a report must be traceable to the exact procedure that made it.
-
-> **Doc contradiction to resolve separately:** `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 says the client report skill *"is being rebuilt fresh"*, present tense. v2.1 exists and matches §4's research set — the rebuild appears done. That doc line is stale.
+**Version discipline:** the repo copy is a fork with its own version — **`v3.0-roc`**, at `docs/RESEARCH_PROCEDURE_v3.0-roc.md` — and every generated report records which version produced it. The MCP-hosted `web-deep-dive` and the repo fork will drift; that is expected and fine, but a report must be traceable to the exact procedure that made it.
 
 ### 1.4 No generation without a confirmed business
 
@@ -499,22 +503,65 @@ v2.1 §10 binds each research task to an MCP tool this worker cannot call. Repla
 
 **Listings discovery — settled.** NAP consistency (§4.3 of the procedure) requires finding the business's Yelp/Angi/BBB/Facebook/Nextdoor/Houzz listings. **NAP is kept, not cut**, and listings discovery is sourced from the **DataForSEO SERP API repurposed for branded queries** — the same integration already required for unbranded ranking. **No additional search API and no additional key are needed**, so the cost model gains only query volume on an account this worker already calls. Note the volume for §7.1's balance question: branded listing lookups are additional billed SERP calls per report, on top of the 2–4 unbranded ranking queries.
 
-> #### ⚠️ OPEN 2026-08-01 — LIVE vs TASK-BASED SERP endpoints. Decide before Piece 3.
+#### ✅ RESOLVED 2026-08-01 — LIVE/instant endpoints only. Task-based is not used.
+
+**This OPEN item is closed.** It was opened because the 24-hour turnaround (§3.2) made endpoint latency material where it had been invisible. It is answered by **reading SEO-Scout's deployed source** — a real, working implementation against the same API, which is stronger evidence than a docs comparison.
+
+**What SEO-Scout actually calls. Every one is live or instant; there is no `task_post` anywhere in it:**
+
+| Endpoint | Used for |
+|---|---|
+| `serp/google/organic/live/regular` | SERP results — ⚠️ see anti-pattern 4 |
+| `dataforseo_labs/google/related_keywords/live` | Keyword discovery |
+| `keywords_data/google_ads/search_volume/live` | Volume |
+| `on_page/instant_pages` | Page analysis — see the OPEN note below |
+| `appendix/user_data` | Balance |
+
+> ### DECISION: ROC uses LIVE / instant endpoints only.
 >
-> **This was not previously a question, and the 24-hour turnaround (§3.2) made it one.** The table above says "DataForSEO SERP API, direct" without specifying which *kind* of endpoint, and the two behave very differently:
+> Task-based endpoints are **not used**. A deployed implementation running this workload has never needed them, which removes the latency tail from the §3.2 critical path entirely and settles the wall-clock question in favour of a report measured in minutes.
 >
-> | | Latency | Cost |
-> |---|---|---|
-> | **Task-based** (post a task, poll for results; standard priority) | **minutes to hours** | cheaper per call |
-> | **Live** (synchronous response) | seconds | **meaningfully more per call** |
+> The cost consequence stands and feeds §7.1: **live endpoints cost more per call**, so this draws the shared balance down faster and sharpens the sub-account question rather than being independent of it.
+
+### ⚠️ ANTI-PATTERNS in the reference implementation — do NOT carry these into the fork
+
+SEO-Scout is the proof that live endpoints work. **It is not a model to copy.** Four specific defects, recorded precisely enough that a future session cannot reintroduce them by accident while "matching the reference":
+
+**1. ⚠️ `seo_discover` accepts a `location` argument and then IGNORES it.** It hardcodes `location_code: 2840` (United States) regardless of what the caller passes.
+
+For a national keyword tool that is a shortcut. **For local contractor SEO it is fatal, and it silently produces confident wrong answers** — a national-average ranking for "emergency roof repair" tells a roofer in Tulsa precisely nothing about Tulsa, while looking exactly like a real finding. **Every ROC query must pass a real location**, and the location it passed must be recorded on the finding, because §4's research set requires every ranking claim to carry exact query + location + date.
+
+**2. ⚠️ `getBalance` is called TWICE per tool call, purely to print a cost footer. Strip it.**
+
+Two extra round-trips per call to render a nicety no automated pipeline reads. In a pipeline with a delivery deadline that is pure overhead on the critical path.
+
+> **And it resolves a standing mystery.** Cost is computed as `(balance_before − balance_after)`, and `getBalance` **returns `-1` on failure**. So any single hiccup in either probe produces arithmetic on a sentinel value and prints nonsense — a negative cost, or a huge one.
 >
-> **At three business days the difference was invisible.** A SERP task that took two hours to come back was irrelevant to a deadline measured in days. **At 24 hours it is material**, especially compounded across the 2–4 unbranded ranking queries *plus* the branded listing lookups above, all of which sit on the critical path of a single report.
+> **This is the documented cause of the false balance readouts in `PROJECT_MASTER.md` §210** ("it will report `-$1.00` or `$33+ cost` and scream that you're out of credit... a display glitch, not real spending"). The real balance held steady at ~$32.38 throughout. **That diagnosis is now CLOSED** — it was never a DataForSEO problem, it was `-1` propagating through a subtraction in the client.
 >
-> **This must be decided before Piece 3 is built, not discovered during it.** It is not a tuning parameter — the two modes have different call shapes, different polling requirements, and different failure handling, and retrofitting one for the other means rewriting the caller.
+> Consequence for §7.1: a balance check built for ROC must **treat a failed probe as unknown, never as a number.** The §7.1 note that any automated balance check must confirm via a real call before alarming was correct, and this is exactly why.
+
+**3. ⚠️ No retries and no timeouts anywhere.** `dataForSeoRequest` throws on any non-ok response, full stop.
+
+That is not acceptable under Checkpoint 1 (§4), which requires **exponential backoff, ~2 attempts, 5–10 seconds apart** before a signal may be stamped `unread` — measured cold pass rates climb from ~67% to ~96% by the third try. Copying this client verbatim would convert a routine transient failure into a quarantined paid order.
+
+**4. ⚠️⚠️ MOST IMPORTANT — `serp/google/organic/live/regular` returns ORGANIC RESULTS ONLY. It cannot see the local pack.**
+
+**For a local contractor the three-pack is the whole game.** Ranking #4 organically while being invisible in the map pack **is the finding** — arguably the single most valuable one this product can deliver — and this endpoint is structurally incapable of seeing it. A report built on it would examine the wrong surface and confidently report that everything is fine.
+
+This directly undercuts §4's own framing of unbranded/near-me ranking as *"the single sharpest finding"*, since for a local business the sharpest version of that finding lives in the pack, not the organic list.
+
+**ROC needs `live/advanced` or a local-finder endpoint.** **This is a capability gap, not a preference**, and the specific endpoint must be selected and verified against a real local query **before Piece 3 is built** — not discovered afterwards when the reports come out bland.
+
+> #### OPEN — `on_page/instant_pages` and `enable_javascript`
 >
-> It also feeds straight back into §7.1: **choosing live endpoints for latency draws the shared balance down faster**, which sharpens the sub-account question rather than being independent of it.
+> SEO-Scout calls `on_page/instant_pages` with **`enable_javascript: false`**. DataForSEO supports `true`.
 >
-> A plausible middle — task-based with **high priority**, or live only for the queries on the critical path — is worth pricing, but it is a decision, not a default.
+> **If JS-enabled instant_pages covers enough of the rendered-vs-code comparison, it may reduce the scope of the render VPS — the longest pole in the build (§7.6 step 2, §7.2 not yet rented).** That would be a material simplification and it is cheap to find out.
+>
+> **Worth TESTING before building the VPS.** A single call against a known JS-heavy contractor site answers it.
+>
+> ⚠️ **This does NOT claim instant_pages replaces the VPS, and nobody should read it that way.** The product's differentiator is seeing the page *as a human does* — **desktop and mobile screenshots and measured mobile load timing (§2.2, §4) almost certainly still require real Chrome.** The realistic upside is narrowing what the VPS must do, not deleting it. Test first, then decide.
 
 ### 7.5 The quarantine holding state — still undesigned
 
@@ -545,7 +592,11 @@ A useful intermediate: run the full pipeline in **dry-run mode**, generating and
 
 ## 8. Cross-document contradictions found while writing this
 
-Recorded here as found. All entries below are now resolved; struck items are kept for the audit trail.
+Recorded here as found. Struck items are kept for the audit trail.
+
+> ⚠️ **REOPENED 2026-08-01 — entries 1 and 5 below are no longer resolved.** Both were closed on the premise that `deep-dive-client-report` v2.1/v2.2 was a completed rebuild whose research set matched §4. **Irene ruled on 2026-08-01 that it is a degraded, never-completed copy, and that `web-deep-dive` is the source of truth** (§1.3). So entry 1's resolution — *"now described as done"* — records the wrong fact, and entry 5's resolution points at a skill this project no longer forks from.
+>
+> **The real state:** the fork is `docs/RESEARCH_PROCEDURE_v3.0-roc.md` (DRAFT), taken from `web-deep-dive`, and it performs the owner-identity strip that entry 1 believed had already happened. `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 is wrong in **both** halves and sits in that document's LOCKED section — it needs its own dispatch; this document may not edit it.
 
 1. ~~**`AUTOMATION_PIPELINE_SPEC.md` §1 item 5** — says the client report skill *"is being rebuilt fresh."* v2.1 exists and matches §4. Stale.~~ **RESOLVED in `39d1c611`:** now described as done, naming `deep-dive-client-report` v2.1.
 2. ~~**`AUTOMATION_PIPELINE_SPEC.md` §3 (~line 58)** — still calls `lib/report-precheck.js` *"untracked."* Untrue since `47693b2`; the §5 instance was fixed and this one missed.~~ **RESOLVED in `39d1c611`:** the "untracked" claim removed; the UNVERIFIED / never-run / wired-to-nothing warning kept.

@@ -78,7 +78,28 @@ Every finding must trace to a retrieved source. Ranking claims carry exact query
 - **Rendered-vs-code reality.** What a human actually sees on the rendered page vs. what the code claims. The core differentiator. Desktop AND mobile capture.
 - **Mobile load speed.** Roughly how long to usable on a phone, MEASURED from the render (nearly free once rendering). State honestly ("took ~8 seconds to become usable on a phone"); NEVER a fabricated PageSpeed-style score.
 - **Click-to-call on mobile.** Is the phone number a tap-to-dial `tel:` link or plain text? Catchable in the visual pass. On-brand ("get the phone ringing"), and most contractors don't know theirs isn't tappable.
-- **Broken links / dead pages.** One-level crawl: extract every link from the homepage, request each, record 200/404/301/timeout. This is a CRAWLER (network requests), NOT a browser — no interaction, no always-on browser needed. Crawl politely: respect robots.txt, reasonable delays, don't hammer a small business's server.
+- **Broken links / dead pages.** One-level crawl from the homepage: request each link, record 200/404/301/timeout. This is a CRAWLER (network requests), NOT a browser — no interaction, no always-on browser needed. Crawl politely: respect robots.txt, reasonable delays, don't hammer a small business's server. **Bounded — see the crawl bounds immediately below.**
+
+#### ⚠️ CRAWL BOUNDS — a product decision, not an implementation detail (DECIDED 2026-08-01)
+
+This bullet previously read *"extract every link from the homepage, request each"* with **no cap of any kind.** The input is somebody else's HTML, so that is unbounded by construction: a contractor site with a mega-menu or a service-area list can carry 200+ homepage links, and at the polite delays this same bullet requires, that is minutes of pure serial waiting with no ceiling.
+
+> **The free tier is currently more disciplined than the paid one, which is backwards.** `functions/api/scan.js` caps everything it touches — `MAX_BODY_BYTES` on the response body, `.slice(0, 5)` on phones and addresses, `.slice(0, 10)` on structured-data types — on the explicitly stated principle **"never parse unbounded input."** The paid pipeline, which has a delivery deadline attached and costs real money per run, had no equivalent. **These bounds fix that.**
+
+**The bounds:**
+
+| Bound | Value |
+|---|---|
+| Link cap | **first 50 unique links** from the homepage |
+| Deduplication | by normalized URL — fragment stripped, trailing slash normalized |
+| Scope | **same registrable domain only**. Off-site links are not our business to audit and drag in third-party latency |
+| Wall-clock ceiling | **120 seconds total** for the crawl phase |
+
+**On hitting either cap, the crawl STOPS and the un-visited pages are stamped `unread`. The job continues. It does not fail.**
+
+**Hitting a cap is a NORMAL OUTCOME, not an error condition.** A large site is not a defect and must not be reported as one. This follows directly from the fetch scar: an `unread` page produces **no finding, no red flag, no severity rating** — we checked 50 pages and say so, rather than implying the rest are fine or implying they are broken. **"We couldn't check it" is never reported as "it isn't there."**
+
+The 120-second ceiling exists because the link cap alone does not bound wall-clock: fifty links against one slow or hanging server can still exceed any reasonable budget. Both bounds are needed; either one alone leaves a hole.
 - **NAP consistency.** Does name/phone/address match across the business's own site, its GBP, and its claimed listings. Report by MISMATCH TYPE (formatting variation vs. full change), NEVER by printing the values (output privacy lock).
 
 ### CUT — and why (do not re-add)
@@ -89,6 +110,11 @@ A live Places API probe (5 billed calls against businesses with 6,000–7,000+ r
 - **Owner response rate — CUT.** The field does not exist. No reply/response/ownerResponse key anywhere on the review object. Not a sampling problem — the data is simply absent.
 - **Photo count / photo recency — CUT.** Photos cap at 10 with NO total-count field ("at least 10" is true of every established business, worthless) and NO timestamp metadata of any kind (recency unstateable at any tier).
 - **editorialSummary-dependent section — CUT.** Absent for most small local operators; both probe businesses returned none.
+- **⚠️ Fetching, rendering, or crawling COMPETITOR sites — CUT (added 2026-08-01). Never do this.** Competitor handling **re-reads the unbranded SERP already fetched** for the ranking finding. It costs nothing extra and that is not an accident.
+
+  **Why this must never be re-added:** every competitor fetched multiplies the two most expensive operations in the pipeline — the render call and the bounded crawl — by the competitor count. A page-1 SERP has ten results. Rendering and crawling ten competitor sites is **an order of magnitude more work than the entire rest of the report**, and it is the single fastest available way to turn a 5-minute report into an hours-long one, against a 24-hour delivery commitment.
+
+  It is also unnecessary. Everything §6's competitor lock permits us to say — rank position, website yes/no, public review count, business type — is **already visible in the SERP result and the Places data**. Fetching the site buys nothing we are allowed to print. A future session will notice that competitor sections would be "richer" with real page data; that richness is exactly the editorializing §6 forbids.
 
 What SURVIVES from reviews/photos: rating, true `userRatingCount`, hours completeness, and photo AUTHOR ATTRIBUTION (owner vs. customer). Build the review/photo section around totals + attribution, never recency or rates.
 
