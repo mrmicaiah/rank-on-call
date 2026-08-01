@@ -429,7 +429,7 @@ A useful intermediate: run the full pipeline in **dry-run mode**, generating and
 
 ## 8. Cross-document contradictions found while writing this
 
-Recorded, not resolved. Each is a small edit somewhere else.
+Recorded here as found. All entries below are now resolved; struck items are kept for the audit trail.
 
 1. ~~**`AUTOMATION_PIPELINE_SPEC.md` §1 item 5** — says the client report skill *"is being rebuilt fresh."* v2.1 exists and matches §4. Stale.~~ **RESOLVED in `39d1c611`:** now described as done, naming `deep-dive-client-report` v2.1.
 2. ~~**`AUTOMATION_PIPELINE_SPEC.md` §3 (~line 58)** — still calls `lib/report-precheck.js` *"untracked."* Untrue since `47693b2`; the §5 instance was fixed and this one missed.~~ **RESOLVED in `39d1c611`:** the "untracked" claim removed; the UNVERIFIED / never-run / wired-to-nothing warning kept.
