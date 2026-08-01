@@ -2,20 +2,38 @@
 
 **Status:** DRAFT — awaiting Irene's review. Nothing is built against this yet.
 **Version:** `v3.0-roc`. **Every generated report must record this version string**, so any report is traceable to the exact procedure that produced it.
-**Forked from:** `web-deep-dive`, the internal sales-prep skill, read via MCP on 2026-08-01. **Not** from `deep-dive-client-report`, which Irene ruled on 2026-08-01 is a degraded, never-completed copy (`FULFILLMENT_WORKER_SPEC.md` §1.3, corrected).
+**Derived from:** `web-deep-dive`, the internal sales-prep skill, read via MCP on 2026-08-01.
 **Governed by:** `docs/AUTOMATION_PIPELINE_SPEC.md` §4 (research set + CUT list), §5 (deterministic safety layer), §6 (privacy locks), §7 (deliverable shape). Where this document and that one disagree, **that one wins and this one is wrong.**
+
+> ## What this is, in one sentence
+>
+> ### `web-deep-dive`'s research depth, PLUS real GBP data, MINUS the privacy layer, with the checkpoint system built in end to end.
+>
+> — Irene, 2026-08-01. That sentence is the statement of intent; every decision in this document should be checkable against it.
 
 ---
 
-## 0. What this is, and the one thing to understand about it
+## 0. This is the SUCCESSOR procedure, not a parallel fork
+
+**When complete, this document replaces `deep-dive-client-report` and takes that name.**
+
+`deep-dive-client-report` is **not a source to derive from — it is the name this procedure will carry when finished.** Whatever exists under that name on the Productivity MCP today is a **placeholder**: Irene cannot recall whether it was ever completed, and either way it is not accurate. **Nothing in this document is derived from it, and no future session should go looking there for material.** The research lineage runs from `web-deep-dive`; the *name* is inherited separately, on completion.
+
+### It lives here, not on the MCP
+
+**This procedure is version-controlled in this repo and wired to the ROC workers. It is not hosted on the Productivity MCP, and it must not be moved there.**
+
+That follows directly from the **self-contained-worker lock** (`FULFILLMENT_WORKER_SPEC.md` §1.3): the fulfillment worker calls **no MCP worker at all** — no transport, no shared credentials, no runtime dependency on Irene's or Micaiah's infrastructure. **A procedure the fulfillment worker cannot legally call is not a useful place to keep the procedure.** Keeping it in the repo also means it is diffable, reviewable, and versioned alongside the code that executes it, which the MCP copy never was — and that is precisely how the placeholder was able to drift into inaccuracy without anyone noticing.
+
+### The one thing to understand about the derivation
 
 `web-deep-dive` is a **sales-prep** skill. Its job was to tell Irene everything knowable about a business she was about to call — including who owns it, where they live, and how to reach them. It is good at that job.
 
-**This fork sells a report to that business.** That inverts the privacy posture completely: the subject of the research is now the customer, the artifact is a compiled product they receive, and everything that made `web-deep-dive` useful for a cold call is a liability in a document with our name on it.
+**This procedure sells a report to that business.** That inverts the privacy posture completely: the subject of the research is now the customer, the artifact is a compiled product they receive, and everything that made `web-deep-dive` useful for a cold call is a liability in a document with our name on it.
 
-> **The fork is therefore not a light edit.** An entire phase is deleted, the report's opening is rebuilt rather than adjusted, and one whole research tool is removed rather than rebound. That is the strip `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 believed had already been done. It had not; it is done here.
+> **So this is not a light edit.** An entire phase is deleted and the report's opening is rebuilt rather than adjusted. That is the strip `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 believed had already been done. It had not; it is done here.
 
-**What is NOT changed:** the research itself. The listings audit, NAP consistency, competitor snapshot, services, red flags, and recommendations all carry across intact. This fork changes **who the report is about the way it is written**, not what it looks at.
+**What is NOT changed:** the research itself. The listings audit, NAP consistency, competitor snapshot, services, red flags, and recommendations all carry across intact. This changes **who the report is about and the way it is written**, not what it looks at. **What is ADDED**, per the statement of intent, is real GBP data from Places and the four-checkpoint system wired through end to end — neither of which `web-deep-dive` has.
 
 ---
 
@@ -42,7 +60,7 @@ These come from the governing specs. They are restated here because this is the 
 
 Phase 1 was also the single largest concentration of personal data in the procedure. Deleting it removes the problem rather than managing it.
 
-**The procedure begins at what was Phase 2.2.** There is no verification step in this fork. If `confirmed_place_id` is absent, the job never reaches the generator at all — that is the §1.4 gate's job, upstream, and the generator must never attempt to compensate for it.
+**The procedure begins at what was Phase 2.2.** There is no verification step in this procedure. If `confirmed_place_id` is absent, the job never reaches the generator at all — that is the §1.4 gate's job, upstream, and the generator must never attempt to compensate for it.
 
 ### 2.2 Owner identity fields — REMOVED EVERYWHERE
 
@@ -59,30 +77,36 @@ Removed from Phase 2.1 and from every downstream reference:
 
 > ⚠️ **`owner_name` is collected at checkout as an anti-fraud friction signal** (`FUNNEL_REORDER_SPEC.md` §3) and stored in D1. **It must never be passed to this procedure.** It is not research input, it is not report content, and it must not appear in any prompt. It needs a `block`-severity check in `lib/report-precheck.js` — noted in §8.
 
-### 2.3 ⚠️ ALL WHOIS / RDAP — REMOVED, NOT REBOUND
+### 2.3 ✅ RDAP — PERMITTED, narrowly. Three fields only.
 
-`web-deep-dive` used `seo_domain_whois` in Phase 2.2 for registration date, expiry, and registrar. **The tool is removed entirely. It is not rebound to a direct RDAP call.**
+> **RESOLVED 2026-08-01.** An earlier draft of this document removed all WHOIS/RDAP outright. **That was wrong and has been reverted.** `AUTOMATION_PIPELINE_SPEC.md` §6's existing lock was already correct and already drew this line precisely.
 
-**Rationale as instructed:** WHOIS/RDAP responses can carry registrant name, organization, and email. The strip is total rather than filtered, on the same "by construction, not post-hoc" principle as lock 3.
+**Permitted, and nothing beyond it:**
 
-> ### ⚠️ THIS CONFLICTS WITH THREE THINGS. Irene must rule before this fork is built against.
->
-> **1. `AUTOMATION_PIPELINE_SPEC.md` §6 explicitly PERMITS it, narrowly.** Its sourcing lock reads: *"WHOIS is restricted to domain facts only: registration date, expiry, registrar."* That is a deliberate, already-drawn line — the governing spec anticipated this exact tension and chose narrow permission over removal. **That spec wins on conflict**, so this section is currently in violation of it.
->
-> **2. `FULFILLMENT_WORKER_SPEC.md` §7.4 has already rebound it** — *"Domain facts | `seo_domain_whois` | **RDAP/WHOIS direct** — dates + registrar only (§6 sourcing lock)"* — as a DECIDED row.
->
-> **3. ⚠️ It breaks a machine-enforced requirement.** `lib/report-precheck.js` `REQUIRED_SECTIONS` includes **`"Your domain"`**. With no domain-facts source, that mandatory section has no data, and **every report trips `MISSING_SECTION`** — a check the spec intends to be `block` severity at Checkpoint 4.
->
-> **The product cost is real, not cosmetic.** Domain expiry is one of the genuine "this paid for itself" findings: the sample report's Company B has a domain **expiring in under five months**, which is a business-ending event the owner does not know about. There is no alternative source for it. Certificate-transparency logs give a weak first-seen proxy for age and say nothing at all about expiry.
->
-> **Factual note offered for the ruling, not as an override:** for `.com` / `.net` and most gTLDs, RDAP responses have redacted registrant contact fields by default since the post-GDPR registration-data policy. A query that reads only `events` (registration, expiration) and the registrar name does not receive personal data in the response at all. That is very likely why §6 drew the line where it did.
->
-> **Three options:**
-> **(a)** Keep the removal as written; drop "Your domain" from `REQUIRED_SECTIONS` and accept losing the expiry finding.
-> **(b)** Revert to §6's line — RDAP for dates + registrar only, with a field allowlist so nothing else is ever read into memory.
-> **(c)** Remove for now, revisit after a lawyer reviews (§6.4 of the reorder spec already routes privacy questions there).
->
-> **This document implements the removal as instructed.** It is flagged here, loudly, because it is a DRAFT and this is precisely the kind of decision that should not be resolved silently by whoever builds Piece 3.
+| Field | Status |
+|---|---|
+| Domain **registration date** | ✅ permitted |
+| Domain **expiry date** | ✅ permitted |
+| **Registrar** name | ✅ permitted |
+| Registrant name, organization, email, address, phone | ❌ **never requested, never read, never stored** |
+
+**Bound to RDAP direct**, per `FULFILLMENT_WORKER_SPEC.md` §7.4's DECIDED row. The `seo_domain_whois` MCP tool is not called (self-contained-worker lock).
+
+#### ⚠️ Why this is safe — record this so it is not re-stripped later
+
+**Restriction is by QUERY CONSTRUCTION, not by filtering a response after the fact.** That distinction is what makes this compatible with lock 3 ("by construction, not post-hoc"), and it is why "just remove it" was the wrong instinct:
+
+- **RDAP responses for `.com` / `.net` and most gTLDs have redacted registrant contact fields by default** since the post-GDPR registration-data policy. The personal fields are not present in the response to be filtered.
+- A query reading only the `events` array (registration, expiration) and the registrar name **does not receive personal data at all**.
+- So the implementation reads **three named fields** and never deserializes the rest. Not a filter, not a scrub — a field allowlist at the parse boundary.
+
+> ⚠️ **To a future session:** if you are considering stripping RDAP on privacy grounds, that has already been considered, tried, and reverted. The correct control is the three-field allowlist above, not removal. If you widen what is read, *that* is the change that needs review.
+
+#### The product value, plainly
+
+**Domain expiry is a business-ending event that owners routinely do not know about.** `samples/sample-deep-dive-comparison.md` carries a real case: a domain **expiring in under five months**, on an established business with twelve years of history behind that address. Losing it would take the site, the email, and every inbound link with it. This is a genuine "this paid for itself" finding, it is cheap to retrieve, and there is **no alternative source** — certificate-transparency logs give a weak first-seen proxy for age and say nothing whatever about expiry.
+
+**It also un-breaks a machine-enforced requirement.** `lib/report-precheck.js` `REQUIRED_SECTIONS` includes **`"Your domain"`**. Under total removal that mandatory section had no data source at all, so **every report would have tripped `MISSING_SECTION`** — a check the spec intends to be `block` severity at Checkpoint 4. Restoring the narrow query restores the section's source.
 
 ### 2.4 The Quick Facts table — the opening must be REBUILT, not edited
 
@@ -94,17 +118,29 @@ Strip the personal rows and **four of six are gone.** What survives — a websit
 
 This is not incidental damage. That table *was* the sales-prep thesis — *here is who this person is and how to reach them* — and the reason it cannot survive is the same reason the fork exists.
 
-### 2.5 Verbatim review quotes — REMOVED. ⚠️ A NEW constraint.
+### 2.5 The entire review-text layer — REMOVED. Quotes AND themes.
 
-`web-deep-dive` Phase 2.5 collects **"Standout Quotes" — 2–3 verbatim customer reviews.** Excellent for sales prep, where the quotes are read once by one person and never republished.
+`web-deep-dive` Phase 2.5 is a "Reviews Deep Dive": ratings, counts, **key themes**, **2–3 verbatim standout quotes**, and **negative patterns**. Two separate rulings remove most of it, for two unrelated reasons.
 
-**Not acceptable here.** Those quotes are **Google's and Yelp's platform content, reproduced inside a document Rank On Call sells for $39.** That is a different act from reading them.
+**What survives: total review count and overall rating. Nothing else.** Both are **true totals** from Places (§4: *"these are TRUE TOTALS, safe"*) — not samples, not inferences.
 
-**Paraphrase themes only.** *"Several reviewers mention punctuality"* — never the sentence a customer wrote.
+#### (a) Verbatim quotes — REMOVED. ⚠️ A NEW constraint.
+
+Those quotes are **Google's and Yelp's platform content, reproduced inside a document Rank On Call sells for $39.** That is a materially different act from reading them once to prepare a sales call.
 
 > ⚠️ **This constraint does not exist in `web-deep-dive` and has no precedent in the governing specs.** §6's output lock covers personal data, not third-party content reproduced commercially. **It is introduced here** and should be recorded in `AUTOMATION_PIPELINE_SPEC.md` §6 so it survives independently of this document.
 
-> ⚠️ **And "themes" themselves need care — the §4 CUT list's own reasoning applies.** The Places API returns only **5 reviews out of thousands, relevance-selected, non-chronological, with no paging.** §4 CUT review recency for exactly that reason. **Theme extraction and "negative patterns" from a 0.08% relevance-biased sample are no more defensible than recency was.** What survives is what §4 says survives: **rating and true `userRatingCount`** — real totals — plus photo author attribution. Any theme statement must be hedged to what a five-review sample can support, or cut. See §8.
+#### (b) ✅ Themes and negative patterns — CUT ENTIRELY (Irene's ruling, 2026-08-01)
+
+An earlier draft kept paraphrased themes. **It should not have.** The reasoning was already written down in §4's own CUT list and simply had not been applied to this case:
+
+**The Places API returns only 5 reviews out of potentially thousands** — relevance-selected, non-chronological, with no sort control and no paging. §4 **CUT review recency for exactly that sampling problem**, on the grounds that the visible newest review is a floor rather than the true newest.
+
+**A theme drawn from a 0.08% relevance-biased sample has precisely the same defect.** "Several reviewers mention slow scheduling" is not a finding about the business — it is a finding about which five reviews Google chose to surface today. Worse, the bias is not random: relevance selection is exactly the mechanism most likely to over-represent unusual reviews, so **"negative patterns" is the single least trustworthy thing that sample can produce**, and it is also the most damaging to state wrongly.
+
+**Paraphrasing does not fix it.** The earlier draft's hedge — themes are fine if paraphrased — confused the copyright problem with the statistics problem. Paraphrasing solves (a). It does nothing for (b).
+
+> ⚠️ **Recorded in `AUTOMATION_PIPELINE_SPEC.md` §4's CUT list so it cannot return as an "enrichment."** Themes are the obvious thing a future session will want to add back, because they read as insight and the data appears to be sitting right there.
 
 ---
 
@@ -144,7 +180,7 @@ Every row is self-published, non-personal, and already retrieved for other purpo
 | `seo_analyze` | **DataForSEO live SERP, direct** | ⚠️ Endpoint selection is a **capability gap** — see below |
 | `seo_discover` | **DataForSEO Labs live, direct** | ⚠️ **MUST pass a real location** — see below |
 | `seo_domain_check` | Registrar availability API | **STILL UNCHOSEN — OPEN.** `FULFILLMENT_WORKER_SPEC.md` §7.4 |
-| `seo_domain_whois` | **REMOVED — not rebound** | §2.3, and see the conflict flagged there |
+| `seo_domain_whois` | **RDAP direct** | ✅ **Permitted, narrowly** — registration date, expiry, registrar. Nothing else, by query construction (§2.3) |
 
 **All DataForSEO calls use LIVE / instant endpoints. Task-based is not used** (`FULFILLMENT_WORKER_SPEC.md` §7.4, DECIDED 2026-08-01).
 
@@ -162,15 +198,19 @@ Every row is self-published, non-personal, and already retrieved for other purpo
 
 Carried across from `web-deep-dive` substantially unchanged, renumbered from the deletion of Phase 1.
 
-**§5.1 — Website analysis** *(was 2.2)*. Has-website path: fetch homepage / about / services / contact within the bounded crawl; check contact-info presence, services listed, SSL, mobile behaviour, platform, and red flags (placeholder content, outdated information, stale copyright year, broken pages). **No-website path:** domain availability checks only — the registrar API is unchosen (§4), so this path is **not yet buildable**. **WHOIS removed** (§2.3).
+**§5.1 — Website analysis** *(was 2.2)*. Has-website path: fetch homepage / about / services / contact within the bounded crawl; check contact-info presence, services listed, SSL, mobile behaviour, platform, and red flags (placeholder content, outdated information, stale copyright year, broken pages). **Domain facts via narrow RDAP** — registration date, expiry, registrar, and nothing else (§2.3). **No-website path:** domain availability checks — the registrar API is unchosen (§4), so that branch is **not yet buildable**.
 
-**§5.2 — Local listings audit** *(was 2.3)*. Per platform: name / address / phone **as listed**, rating, review count. Values are collected **for comparison only** and never printed (lock 2). Discovered via branded SERP queries.
+**§5.2 — Local listings audit** *(was 2.3)*. **TEN platforms** — ✅ Irene's ruling, 2026-08-01, keeping `web-deep-dive`'s full list:
 
-> ⚠️ **Platform-count discrepancy.** `web-deep-dive` audits **ten**: GBP, Yelp, Angi, HomeAdvisor, BBB, Facebook, Nextdoor, Houzz, Thumbtack, Porch. `FULFILLMENT_WORKER_SPEC.md` §7.4 names **six**: Yelp, Angi, BBB, Facebook, Nextdoor, Houzz. **HomeAdvisor, Thumbtack, and Porch are in the procedure and not in the spec.** Since each platform is a billed SERP call on the critical path, this is a real cost and latency delta, not a wording difference. Needs reconciling — §8.
+> GBP · Yelp · Angi · HomeAdvisor · BBB · Facebook · Nextdoor · Houzz · Thumbtack · Porch
+
+Per platform: name / address / phone **as listed**, rating, review count. Values are collected **for comparison only and never printed** (lock 2) — and under lock 3 they must not enter the generator's input object at all, only the derived mismatch types.
+
+**Discovery method — ONE deep branded query, plus targeted verification only where absence will be claimed.** Not ten blanket queries. The rule that makes this safe: **a platform may only be reported as ABSENT if it was specifically checked.** Anything merely not seen in the broad query is `unread` and is not mentioned. Full reasoning and cost model: `FULFILLMENT_WORKER_SPEC.md` §7.4.
 
 **§5.3 — NAP consistency** *(was 2.4)*. Across the business's own site plus every listing found. **Reported by which platforms disagree and what kind of mismatch — never by value.**
 
-**§5.4 — Reviews** *(was 2.5)*. Ratings and true counts across platforms. Themes **paraphrased only**, and only to the extent a five-review sample supports (§2.5). **No verbatim quotes. No recency claims. No owner-response-rate claims** — both CUT in §4, the data cannot support them.
+**§5.4 — Reviews** *(was 2.5)*. **Overall rating and total review count only.** Both are true totals from Places. **No verbatim quotes, no themes, no negative patterns** (§2.5), **no recency claims, no owner-response-rate claims** (both CUT in §4 — the data cannot support them). This section is deliberately thin, and that is the correct outcome: what remains is everything the available data can actually carry.
 
 **§5.5 — Services and service area** *(was 2.6)*. As the business states them.
 
@@ -186,7 +226,7 @@ Carried across from `web-deep-dive` substantially unchanged, renumbered from the
 
 ## 6. ⚠️ Report template — three structures currently disagree
 
-This is the largest unresolved item in the fork, and it is checkable rather than a matter of taste.
+This is the largest unresolved item in this procedure, and it is checkable rather than a matter of taste.
 
 **Three documents describe the deliverable's shape, and no two agree:**
 
@@ -206,10 +246,10 @@ This is the largest unresolved item in the fork, and it is checkable rather than
 | **Your website** | §5.1 + render | |
 | **Name, address, and phone consistency** | §5.2, §5.3 | |
 | **Where you show up** | §5.6 + ranking | ⚠️ needs local pack |
-| **Your domain** | §5.1 domain facts | ⚠️ **no source while §2.3 stands** |
+| **Your domain** | §5.1 domain facts via narrow RDAP | ✅ source restored (§2.3) |
 | **What this means** | §5.7, §5.8 | the "nerd out" close |
 
-**Two things fall out of this table**, both flagged in §8: the opening section is not in `REQUIRED_SECTIONS` and does not need to be, but **"Your domain" is** — and §2.3 currently leaves it empty.
+**One thing falls out of this table**, flagged in §8: the proposed opening section (§3) is deliberately **not** in `REQUIRED_SECTIONS`, which needs confirming as intended rather than an omission.
 
 ---
 
@@ -228,21 +268,25 @@ Non-negotiable, applies to every finding this procedure produces:
 
 ## 8. Open items
 
-**Blocking — must be answered before this procedure is built against**
+**✅ Closed 2026-08-01 — kept for the record**
 
-1. **⚠️ The WHOIS/RDAP removal vs. §6, §7.4, and `REQUIRED_SECTIONS`.** §2.3. Three-way conflict with a mandatory report section left sourceless. **Irene's ruling needed.**
-2. **⚠️ SERP endpoint selection — the local pack.** `live/advanced` or a local-finder endpoint, verified against a real local query. Capability gap (§4).
-3. **Listings platform count: 6 or 10?** §5.2. Real cost and latency delta on the critical path.
+- ~~WHOIS/RDAP removal vs. §6 and `REQUIRED_SECTIONS`.~~ **Narrow RDAP restored** — three fields, by query construction. §2.3.
+- ~~Do review themes survive a 5-review sample?~~ **No. CUT entirely.** Rating and total count only. §2.5(b).
+- ~~Listings platform count: 6 or 10?~~ **Ten.** §5.2.
+- ~~Is `deep-dive-client-report` the fork source?~~ **No — it is the name this procedure takes on completion.** §0.
+
+**⚠️ Blocking — must be answered before this procedure is built against**
+
+1. **⚠️ SERP endpoint selection — the local pack.** `serp/google/organic/live/regular` returns organic results only and cannot see the three-pack, which for a local contractor is the whole game. `live/advanced` or a local-finder endpoint, **verified against a real local query** before Piece 3. Capability gap, not preference. §4 and `FULFILLMENT_WORKER_SPEC.md` §7.4.
 
 **Needs a decision, not blocking**
 
-4. **Registrar availability API** for the no-website path and name-variant checks — still unchosen, so §5.1's no-website branch is not buildable.
-5. **Review themes.** Whether a 5-review relevance-biased sample supports *any* theme statement, or whether §5.4 reduces to ratings and counts only. §2.5.
-6. **Record the third-party-content constraint in `AUTOMATION_PIPELINE_SPEC.md` §6** so the no-verbatim-quotes rule survives independently of this document. §2.5.
-7. **Add an `OWNER_NAME_LEAKED` check at `block` severity to `lib/report-precheck.js`.** Needs a per-job context argument, since an owner name has no detectable shape — the check is "does this draft contain *this job's* stored `owner_name` string." `FUNNEL_REORDER_SPEC.md` §3.2.
-8. **`REQUIRED_SECTIONS` vs. the opening section.** The proposed opening (§3) is deliberately not in the required list. Confirm that is intended rather than an omission.
+2. **Registrar availability API** for the no-website path and name-variant checks — still unchosen, so §5.1's no-website branch is not buildable. A contractor with no website at all is a real and valuable case, so this is worth closing before Piece 3 rather than after.
+3. **Record the third-party-content constraint in `AUTOMATION_PIPELINE_SPEC.md` §6** so the no-verbatim-quotes rule survives independently of this document. §2.5(a).
+4. **Add an `OWNER_NAME_LEAKED` check at `block` severity to `lib/report-precheck.js`.** Needs a per-job context argument, since an owner name has no detectable shape — the check is "does this draft contain *this job's* stored `owner_name` string." `FUNNEL_REORDER_SPEC.md` §3.2.
+5. **`REQUIRED_SECTIONS` vs. the opening section.** The proposed opening (§3) is deliberately not in the required list. Confirm that is intended rather than an omission.
 
 **Already tracked elsewhere**
 
-9. Three of the eight Checkpoint 4 checks are `warn` rather than `block`, and the §1.5 accuracy-claim check is absent entirely. `FULFILLMENT_WORKER_SPEC.md` §4 / §7.6 step 4.
-10. `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 is wrong in both halves — it states the rebuild is done and names the wrong skill. It sits in the LOCKED section and needs its own dispatch.
+6. Three of the eight Checkpoint 4 checks are `warn` rather than `block`, and the §1.5 accuracy-claim check is absent entirely. `FULFILLMENT_WORKER_SPEC.md` §4 / §7.6 step 4.
+7. `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 — corrected in place 2026-08-01 with a dated note. `FULFILLMENT_WORKER_SPEC.md` §8 register entries 1 and 5 remain **open**, correctly.

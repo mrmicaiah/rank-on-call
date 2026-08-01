@@ -85,15 +85,19 @@ Both landed 2026-07-25 in commit `fe132db`; `git log -S` confirms neither string
 
 Rationale: fulfillment must not break because someone redeployed a productivity worker, rotated a shared secret, or drained a shared API balance. A paid order is a contractual obligation with a **24-hour deadline** attached; it cannot hang off infrastructure this project doesn't control. **The shorter window makes this argument stronger, not weaker** — there is no longer a weekend of slack in which someone else's outage can be noticed and worked around.
 
-#### ⚠️ CORRECTED 2026-08-01 — the fork source is `web-deep-dive`, NOT `deep-dive-client-report`
+#### ⚠️ CORRECTED 2026-08-01 — `v3.0-roc` is the SUCCESSOR procedure, derived from `web-deep-dive`
 
-**Irene ruled on 2026-08-01 that `web-deep-dive` is the source of truth.** `deep-dive-client-report` is a **degraded, never-completed copy** and must not be used as the basis of the fork.
+**`docs/RESEARCH_PROCEDURE_v3.0-roc.md` (DRAFT) is the research procedure.** Irene's definition of it: ***`web-deep-dive`'s research depth, PLUS real GBP data, MINUS the privacy layer, with the checkpoint system built in end to end.***
 
-**The fork is written: `docs/RESEARCH_PROCEDURE_v3.0-roc.md` (DRAFT).** Everything below in this subsection was written against the wrong source and is superseded by that document — it is kept only because the *kind* of edits it demanded (delivery framing, tool bindings) still had to be made, and because the table below records where they came from.
+**`deep-dive-client-report` is not a source to derive from — it is the NAME this procedure takes when finished.** Whatever exists under that name on the Productivity MCP today is a **placeholder**; Irene cannot recall whether it was ever completed, and either way it is not accurate. **On completion, `v3.0-roc` replaces it and inherits the name.** It is a successor, not a parallel fork.
 
-> ⚠️ **This correction collides with a LOCKED decision.** `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 states the rebuild is **DONE** and names *"the rebuilt skill is `deep-dive-client-report` v2.1, and its research set matches §4"* — while also describing `web-deep-dive`'s owner-identity problems as **STRUCTURAL, not incidental**, and recording that it "remains the internal sales-prep skill and is unchanged."
+**It lives in this repo, version-controlled and wired to the ROC workers — not on the MCP.** That follows from §1.3 above: this worker calls no MCP worker, so a procedure it cannot legally call is not a useful place to keep the procedure.
+
+Everything below in this subsection was written against the wrong source and is superseded by that document. It is kept only because the *kind* of edits it demanded — delivery framing and tool bindings — still had to be made, and the table records where they came from.
+
+> ⚠️ **`AUTOMATION_PIPELINE_SPEC.md` §1 item 5 claimed this work was already DONE.** It was not. That item has been **corrected in place** (dated note, 2026-08-01) as a factual correction rather than a reopened decision — the rebuild remains locked and correct, only the completion claim was false.
 >
-> Both halves of that item are now wrong: the rebuild was not done, and the source we are forking from is the one that item warned about. **The strip that item claimed had already happened must actually be performed now** — which is exactly what `RESEARCH_PROCEDURE_v3.0-roc.md` does, and why its privacy section is the largest part of it. §1 item 5 needs its own dispatch; this document may not edit a locked decision in another spec.
+> **The rest of that item stands and is worth keeping:** its description of the owner-privacy problems as **STRUCTURAL, not incidental** — the Owner/Address/Phone opening table, the identity-verification Phase 1, the WHOIS-registrant and LLC lookups — is accurate, and is exactly the strip `v3.0-roc` §2 actually performs. The item correctly identified the work; it was wrong only that the work had happened.
 
 **Required edits, as originally written against `deep-dive-client-report` v2.1 — retained for the audit trail:**
 
@@ -501,7 +505,43 @@ v2.1 §10 binds each research task to an MCP tool this worker cannot call. Repla
 | Site fetch + render | `web_fetch` + render | Worker fetch + the VPS `/render` service |
 | Listings discovery | `web_search` | **DataForSEO SERP API (branded queries) — DECIDED, keep NAP** |
 
-**Listings discovery — settled.** NAP consistency (§4.3 of the procedure) requires finding the business's Yelp/Angi/BBB/Facebook/Nextdoor/Houzz listings. **NAP is kept, not cut**, and listings discovery is sourced from the **DataForSEO SERP API repurposed for branded queries** — the same integration already required for unbranded ranking. **No additional search API and no additional key are needed**, so the cost model gains only query volume on an account this worker already calls. Note the volume for §7.1's balance question: branded listing lookups are additional billed SERP calls per report, on top of the 2–4 unbranded ranking queries.
+**Listings discovery — settled.** NAP consistency requires finding the business's directory listings. **NAP is kept, not cut**, and listings discovery is sourced from the **DataForSEO SERP API repurposed for branded queries** — the same integration already required for unbranded ranking. **No additional search API and no additional key are needed**, so the cost model gains only query volume on an account this worker already calls.
+
+**✅ PLATFORM LIST — TEN (Irene's ruling, 2026-08-01).** This previously named six. The full `web-deep-dive` list stands:
+
+> **GBP · Yelp · Angi · HomeAdvisor · BBB · Facebook · Nextdoor · Houzz · Thumbtack · Porch**
+
+`HomeAdvisor`, `Thumbtack` and `Porch` were missing from the earlier six.
+
+#### ✅ RESOLVED 2026-08-01 — how many branded queries, and why it is not ten
+
+**Recommendation: ONE deep branded sweep, plus targeted verification only where we intend to state absence.** Not one shallow query, and not ten blanket queries.
+
+**First, the honest part: cost is NOT the deciding argument.** Live SERP calls run on the order of fractions of a cent, so ten-vs-one is roughly **$0.03 per report** — negligible against $39 and not worth designing around. Latency does not decide it either: the queries are independent and sit in the parallel stage, so ten of them cost about as much wall-clock as one. **Anyone arguing this on cost or speed is arguing the wrong axis.**
+
+**Correctness decides it, in both directions:**
+
+| Approach | Problem |
+|---|---|
+| **One shallow query** (default depth ~10) | A listing that exists but ranks below the fold is **missed**. Under the fetch scar we may not report that as absence — so most platforms end up `unread`, the NAP section goes thin, and a future session is tempted into "you're not on Yelp" from a result it never checked |
+| **Ten blanket `site:` queries** | Maximum recall and clean per-platform answers, but nine of the ten calls are spent confirming platforms whose absence we would never actually report on |
+
+**The design that works:**
+
+1. **One branded sweep at increased depth** — `"<business name>" <city> <state>`, depth ~100 rather than the default 10. One call, and it surfaces far more than a shallow query. Scan the results for the ten known platform domains.
+2. **Every platform found → audit its NAP.** Adding platforms to the audit list is free; they all come out of the same sweep. That is why going from six to ten costs nothing here.
+3. **Targeted `site:` verification ONLY for platforms where absence would itself be a finding.** For a contractor that is realistically **Yelp, BBB, and Facebook** — absence there is actionable. "You're not on Houzz" is not a finding a plumber cares about.
+
+**Worst case: 1 + 3 = four calls, not ten** — and every claim made is one we actually checked.
+
+> **The governing rule, which is the real output of this decision:**
+> **A platform may only be reported as absent if it was specifically checked.** Found in the sweep → audit it. Not found and not verified → `unread`, and **it is not mentioned at all**. Not found and verified → reportable.
+>
+> ⚠️ Even a verified `site:` miss is not proof of non-existence — Google's `site:` coverage is incomplete. So the phrasing must stay honest: **"we looked for a Yelp listing and couldn't find one"**, never *"you have no Yelp listing."* That is still a genuinely useful finding for a contractor — an unfindable listing and a nonexistent one cost him the same call — and it is one we can defend.
+
+**This had to be decided here rather than during Piece 3**, because it is a 10× difference on a critical-path line item and the two implementations are not interchangeable after the fact.
+
+Note the volume for §7.1's balance question: branded listing lookups are additional billed SERP calls per report, on top of the 2–4 unbranded ranking queries — now bounded at roughly four rather than ten.
 
 #### ✅ RESOLVED 2026-08-01 — LIVE/instant endpoints only. Task-based is not used.
 

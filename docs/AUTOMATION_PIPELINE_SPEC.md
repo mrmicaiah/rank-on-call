@@ -24,6 +24,20 @@ These were decided in the automation-rebuild brainstorm. Do not silently reverse
 
 5. **The client report was rebuilt from scratch — DONE.** The original `deep-dive-client-report` skill was derived from the internal `web-deep-dive` sales-prep skill and inherited owner-privacy problems that were STRUCTURAL, not incidental (its opening table was Owner/Address/Phone; its Phase 1 was identity verification; it did WHOIS registrant and LLC lookups). It HAS been rebuilt: the non-personal research spine was kept, the owner-identity spine deleted, identity verification replaced by the buyer-confirmed `place_id`, and new research added. The rebuilt skill is **`deep-dive-client-report` v2.1**, and its research set matches §4 below. `web-deep-dive` remains the internal sales-prep skill and is unchanged.
 
+   > #### ⚠️ CORRECTION 2026-08-01 — correcting a factual error, NOT reopening a decision
+   >
+   > **The two claims above marked DONE are false.** The rebuild was **not completed accurately.** Irene confirmed on 2026-08-01 that whatever exists as `deep-dive-client-report` on the Productivity MCP is a **placeholder** — she cannot recall whether it was ever finished, and either way it is not accurate. **Its research set does not verifiably match §4**, and nothing should be built on the assumption that it does.
+   >
+   > **What is true instead.** The rebuild is happening **now, in this repo**, as **`docs/RESEARCH_PROCEDURE_v3.0-roc.md`** (DRAFT). Irene's definition of it: ***`web-deep-dive`'s research depth, PLUS real GBP data, MINUS the privacy layer, with the checkpoint system built in end to end.***
+   >
+   > **`v3.0-roc` is the SUCCESSOR. On completion it replaces `deep-dive-client-report` and takes that name.** It is not a parallel fork and not a second procedure.
+   >
+   > **It lives in the repo, not on the MCP**, which follows from the self-contained-worker lock (`FULFILLMENT_WORKER_SPEC.md` §1.3): the fulfillment worker calls no MCP worker, so a procedure it cannot legally call is not a useful place to keep the procedure.
+   >
+   > **The rest of this item stands and is worth keeping.** Its description of the owner-privacy problems as **STRUCTURAL, not incidental** — the Owner/Address/Phone opening table, the identity-verification Phase 1, the WHOIS-registrant and LLC lookups — is accurate, and it is exactly the strip `v3.0-roc` §2 actually performs. This item correctly identified the work. It was wrong only that the work had already been done.
+   >
+   > **Decision status unchanged:** rebuilding the client report remains locked and correct. Only the completion claim is corrected.
+
 ## 2. Architecture
 
 **The spine:**
@@ -110,6 +124,15 @@ A live Places API probe (5 billed calls against businesses with 6,000–7,000+ r
 - **Owner response rate — CUT.** The field does not exist. No reply/response/ownerResponse key anywhere on the review object. Not a sampling problem — the data is simply absent.
 - **Photo count / photo recency — CUT.** Photos cap at 10 with NO total-count field ("at least 10" is true of every established business, worthless) and NO timestamp metadata of any kind (recency unstateable at any tier).
 - **editorialSummary-dependent section — CUT.** Absent for most small local operators; both probe businesses returned none.
+- **⚠️ Review THEMES, "key themes", and "negative patterns" — CUT (added 2026-08-01, Irene's ruling). Same sampling defect as recency.**
+
+  The 5-review limitation above is not only a *recency* problem — it is a **representativeness** problem, and it applies identically to any statement about what reviews *say*. Five relevance-selected, non-chronological reviews out of potentially thousands is a **0.08% biased sample**. "Several reviewers mention slow scheduling" is not a finding about the business; it is a finding about which five reviews Google chose to surface that day.
+
+  **"Negative patterns" is the worst case of it.** Relevance selection is exactly the mechanism most likely to over-represent unusual reviews, so the least trustworthy output of that sample is also the most damaging to state wrongly to a paying customer.
+
+  **Paraphrasing does not fix this.** Paraphrasing addresses reproducing a platform's content verbatim; it does nothing about a sample that cannot support the claim in the first place.
+
+  **What survives is unchanged: overall rating and true `userRatingCount`** — real totals, safe — plus photo author attribution. **Themes are the obvious thing a future session will re-add as an "enrichment,"** because they read as insight and the data looks like it is sitting right there. Do not.
 - **⚠️ Fetching, rendering, or crawling COMPETITOR sites — CUT (added 2026-08-01). Never do this.** Competitor handling **re-reads the unbranded SERP already fetched** for the ranking finding. It costs nothing extra and that is not an accident.
 
   **Why this must never be re-added:** every competitor fetched multiplies the two most expensive operations in the pipeline — the render call and the bounded crawl — by the competitor count. A page-1 SERP has ten results. Rendering and crawling ten competitor sites is **an order of magnitude more work than the entire rest of the report**, and it is the single fastest available way to turn a 5-minute report into an hours-long one, against a 24-hour delivery commitment.
