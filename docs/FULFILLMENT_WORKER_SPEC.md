@@ -431,9 +431,9 @@ A useful intermediate: run the full pipeline in **dry-run mode**, generating and
 
 Recorded, not resolved. Each is a small edit somewhere else.
 
-1. **`AUTOMATION_PIPELINE_SPEC.md` §1 item 5** — says the client report skill *"is being rebuilt fresh."* v2.1 exists and matches §4. Stale.
-2. **`AUTOMATION_PIPELINE_SPEC.md` §3 (~line 58)** — still calls `lib/report-precheck.js` *"untracked."* Untrue since `47693b2`; the §5 instance was fixed and this one missed.
-3. **`AUTOMATION_PIPELINE_SPEC.md` §1 item 2** — quotes the live tagline as *"The method is hand-built. The digging is automated. Nothing goes out unread."* That exact string appears nowhere in `src/`; `hand-built` returns zero matches. The claims are real, the wording is a paraphrase.
+1. ~~**`AUTOMATION_PIPELINE_SPEC.md` §1 item 5** — says the client report skill *"is being rebuilt fresh."* v2.1 exists and matches §4. Stale.~~ **RESOLVED in `39d1c611`:** now described as done, naming `deep-dive-client-report` v2.1.
+2. ~~**`AUTOMATION_PIPELINE_SPEC.md` §3 (~line 58)** — still calls `lib/report-precheck.js` *"untracked."* Untrue since `47693b2`; the §5 instance was fixed and this one missed.~~ **RESOLVED in `39d1c611`:** the "untracked" claim removed; the UNVERIFIED / never-run / wired-to-nothing warning kept.
+3. ~~**`AUTOMATION_PIPELINE_SPEC.md` §1 item 2** — quotes the live tagline as *"The method is hand-built. The digging is automated. Nothing goes out unread."* That exact string appears nowhere in `src/`; `hand-built` returns zero matches. The claims are real, the wording is a paraphrase.~~ **RESOLVED in `39d1c611`:** replaced with the actual live copy, quoted with file:line for both `src/index.njk:72` and `src/thank-you.njk:64`.
 4. ~~**From-address** — `report@` vs `reports@`.~~ **RESOLVED at review 2026-07-31:** `reports@rankoncall.com` (plural), matching §9. See §3.3.
-5. **`deep-dive-client-report` v2.1 §0 and §9** — assert permanent human review. Contradicts §1.1 and must be edited in the fork. §1.3.
-6. **`AUTOMATION_PIPELINE_SPEC.md` status line** — reads `DRAFT` while its §1 is written as locked, non-reversible decisions this spec treats as settled.
+5. ~~**`deep-dive-client-report` v2.1 §0 and §9** — assert permanent human review. Contradicts §1.1 and must be edited in the fork. §1.3.~~ **RESOLVED:** skill saved as **v2.2**, delivery-neutral; the ROC worker runs a fork with the human-review framing removed per §1.3.
+6. ~~**`AUTOMATION_PIPELINE_SPEC.md` status line** — reads `DRAFT` while its §1 is written as locked, non-reversible decisions this spec treats as settled.~~ **RESOLVED in `39d1c611`:** now reads "§1 decisions LOCKED and being built against."
