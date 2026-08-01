@@ -1,0 +1,55 @@
+# Rank On Call — fulfillment worker.
+#
+# This is a STANDALONE Worker, deliberately separate from the Pages project that
+# serves the site and `functions/api/*`. Pages Functions have no `queue()` handler,
+# so a Queues consumer cannot live there. Nothing in `functions/api/` is touched by
+# this deployment.
+#
+# Spec: docs/FULFILLMENT_WORKER_SPEC.md §2.1 (durable queue), §3 (flow), §5 (secrets).
+
+name = "rank-on-call-fulfillment"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# ---------------------------------------------------------------------------
+# Queue — producer side. The webhook writes ONLY {payment_intent_id, session_id,
+# stripe_event_id}; the consumer re-reads Stripe for everything else.
+# ---------------------------------------------------------------------------
+[[queues.producers]]
+queue = "roc-fulfillment"
+binding = "JOB_QUEUE"
+
+# ---------------------------------------------------------------------------
+# Queue — consumer side. A job is not acked until the pipeline finishes, so a
+# crash/reboot/throw returns it to the queue (spec §2.1). After max_retries it
+# lands in the DLQ rather than retrying forever against a fixed delivery deadline.
+# ---------------------------------------------------------------------------
+[[queues.consumers]]
+queue = "roc-fulfillment"
+max_retries = 3
+dead_letter_queue = "roc-fulfillment-dlq"
+
+# The DLQ is consumed by this same Worker purely to record the quarantine state.
+# max_retries = 0 and no dead_letter_queue of its own: a DLQ message is terminal.
+# The handler never re-enqueues (spec §3 stage 10b — "Halt. Alert. Never send.").
+[[queues.consumers]]
+queue = "roc-fulfillment-dlq"
+max_retries = 0
+
+# ---------------------------------------------------------------------------
+# D1 — the durable job record. Delivery idempotency is keyed by PaymentIntent id
+# (spec §2.1 "Retry discipline").
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "roc-fulfillment"
+# PLACEHOLDER — replace after running `wrangler d1 create roc-fulfillment`.
+# That command prints the real uuid; paste it here. Deploy will fail until you do.
+database_id = "REPLACE_ME_AFTER_WRANGLER_D1_CREATE"
+
+# ---------------------------------------------------------------------------
+# SECRETS ARE NOT IN THIS FILE and must never be.
+# Set them with `wrangler secret put` — see README.md:
+#   STRIPE_SECRET_KEY      (exists already for the Pages project; this Worker needs its own copy)
+#   STRIPE_WEBHOOK_SECRET  (net-new; created when the endpoint is registered in Stripe)
+# ---------------------------------------------------------------------------
