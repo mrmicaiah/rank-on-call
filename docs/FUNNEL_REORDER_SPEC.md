@@ -1,6 +1,7 @@
 # Rank On Call — Funnel Reorder Spec
 
-**Status:** DRAFT — awaiting Irene's review. Nothing here is built. No file has been changed.
+**Status:** DRAFT — awaiting Irene's review. Nothing here is built; no code file has been changed.
+**Amended 2026-08-01** with Irene's first round of decisions: attestation wording (§2.2), the Places field-mask split (§7.2), **turnaround cut from 3 business days to 24 hours** (§8), the delay email (§8.5), and **the launch gate moving from copy to traffic** (standing rule below). Sections carrying a ✅ are settled; the rest is still draft.
 **Governed by:** `docs/AUTOMATION_PIPELINE_SPEC.md` §1 (locked decisions), §6 (privacy locks), §7 (deliverable shape) and `docs/FULFILLMENT_WORKER_SPEC.md` §1.4 (the confirmed-business gate), §3.1 (the input contract). Where this document and either of those disagree, they win and this one is wrong.
 **Scope:** moving business confirmation and affiliation attestation ahead of payment, the attestation record store, and everything that has to move with them.
 
@@ -8,11 +9,35 @@
 
 ---
 
-## 0. Three things to read before the rest
+> # ⚠️ STANDING RULE — THE LAUNCH GATE IS ABOUT TRAFFIC, NOT COPY
+>
+> **Decided by Irene, 2026-08-01.** The site has no traffic, is not indexed, and is not advertised. So the site copy is to be built **exactly as it will finally read** — including removing the human-review promise at `src/index.njk:72`, `src/thank-you.njk:63`, and the build comment at `src/index.njk:64–68` — rather than deferring the change.
+>
+> **The `FULFILLMENT_WORKER_SPEC.md` §1.2 launch gate is NOT abandoned. It MOVES.** It was "the copy must not ship." It is now:
+>
+> ### Nothing may be advertised, indexed, submitted to search engines, or linked from any campaign until ALL FOUR of these are true:
+>
+> | | Condition | Tracked in |
+> |---|---|---|
+> | **(a)** | The Resend send path is live and **verified end to end** | `FULFILLMENT_WORKER_SPEC.md` §7.6 step 5 |
+> | **(b)** | The delay email exists | §8.5 below |
+> | **(c)** | §7.5 quarantine alerting exists | `FULFILLMENT_WORKER_SPEC.md` §7.5 |
+> | **(d)** | Checkpoint 4 has been verified against real drafted output | `FULFILLMENT_WORKER_SPEC.md` §7.6 step 4 |
+>
+> **⚠️ To any future session:** shipped copy is **not** permission to launch. The copy landing early is a deliberate consequence of there being no audience yet — it is not evidence that the product is ready to have one. If you are reading this and the copy already reads as final, that tells you **nothing** about (a)–(d). Check them.
+>
+> The reasoning is the same one that produced the original gate: a live claim that the product cannot honour is a false statement to a paying customer. Removing the human-review sentence fixes one such claim. **The 24-hour turnaround promise in §8 creates a new one**, and it is false until (a)–(d) hold.
+>
+> Cross-referenced into migration ordering at §9.5, which also covers the site's current indexing posture.
 
-1. **Attestation is a CLAIM, not a check.** Nothing verifies it. Nobody validates affiliation. §2 says this at length because a future session will otherwise "improve" it into a verification step and break the product.
-2. **The reorder does not fully eliminate the §3.1 both-objects read.** It eliminates most of it. The five `intent_*` fields survive on the PaymentIntent, and they bring a timing race with them. §1.3.
-3. **Pre-payment Places lookups spend money on unpaid traffic, on the Enterprise SKU's 1,000-call/month budget — not the 5,000 one.** §7 proposes a field-mask split that puts most of that spend back behind the paywall.
+---
+
+## 0. Four things to read before the rest
+
+1. **The launch gate above.** Copy ships early; traffic does not.
+2. **Attestation is a CLAIM, not a check.** Nothing verifies it. Nobody validates affiliation. §2 says this at length because a future session will otherwise "improve" it into a verification step and break the product.
+3. **The reorder does not fully eliminate the §3.1 both-objects read.** It eliminates most of it. The five `intent_*` fields survive on the PaymentIntent, and they bring a timing race with them — one the 24-hour turnaround makes sharper. §1.3.
+4. **Pre-payment Places lookups spend money on unpaid traffic, on the Enterprise SKU's 1,000-call/month budget — not the 5,000 one.** §7 proposes a field-mask split that puts most of that spend back behind the paywall. **DECIDED — approved.**
 
 ---
 
@@ -76,6 +101,8 @@ Today `confirm-business.js` writes nine keys onto the **PaymentIntent** after pa
 - **A fast pipeline can still beat a slow typist.** A buyer who spends four minutes on the intake form may have their research already underway with no steering inputs. `intent_*` are optional by design and their absence is not an error (§3.1: "Absent, not empty"), so the failure is silent and mild — a less-targeted report — which is precisely why it needs to be written down rather than discovered.
 - **Cheapest mitigation:** a short delay before the consumer's first research call, or a re-read of the PaymentIntent immediately before query construction. Not designed here. §10.
 
+> ⚠️ **The 24-hour turnaround (§8) makes this sharper, in both directions.** A tighter deadline pushes the pipeline to start immediately — which is exactly what makes it beat a buyer who is still typing. And it narrows the room for the obvious fix: a deliberate delay before the first research call is cheap against three days and is a real bite out of twenty-four hours. The two pressures pull opposite ways, so the mitigation needs choosing rather than assuming.
+
 ---
 
 ## 2. Attestation — a claim, not a check
@@ -94,22 +121,26 @@ No email-domain matching, no phone verification, no GBP "claim this listing" han
 
 > ⚠️ **To the next session:** if you are reading this and thinking about adding verification, that is a product reversal requiring Irene's sign-off, not a hardening task. The gate that protects against a wrong-business report is the buyer picking their own listing off a candidate card (`FULFILLMENT_WORKER_SPEC.md` §1.4), plus the owner-name friction in §3. It is not the checkbox.
 
-### 2.2 Affiliation, not ownership
+### 2.2 Affiliation, not ownership — ✅ DECIDED
 
-The wording must be true for **an administrative assistant buying a report for her boss.** "I am the owner" makes that person either lie or abandon. Three candidates for Irene to choose from — all plain, all contractor-voice, none legalese:
+The wording must be true for **an administrative assistant buying a report for her boss.** "I am the owner" makes that person either lie or abandon.
 
-**Candidate A — plainest**
-> I own this business or work for it, and I'm authorized to order this report.
+> ### ✅ DECIDED by Irene, 2026-08-01 — Candidate A, `attestation_version = "v1"`
+>
+> **The exact string, verbatim:**
+>
+> > I own this business or work for it, and I'm authorized to order this report.
+>
+> This is the string that renders on the page, the string stored in `attestations.attestation_text`, and the string `v1` refers to. **Any change to it — including punctuation or capitalization — bumps the version** (§6.2).
 
-**Candidate B — widest, covers outside help**
-> I'm the owner of this business, or I work for it or with it and I'm authorized to order this report on its behalf.
+**Rejected alternatives, kept with their reasoning** so the choice is not silently relitigated:
 
-**Candidate C — shortest**
-> This is my business, or I'm authorized to order this report for it.
+| | Candidate | Why rejected |
+|---|---|---|
+| **B** | *I'm the owner of this business, or I work for it or with it and I'm authorized to order this report on its behalf.* | The most legally complete, and the only one that clearly covers an **outside marketing contractor** ordering for a client. But 27 words, and it reads like terms — which is exactly what §2.3 says the attestation must not look like. **If the outside-contractor case ever turns out to matter commercially, B is the upgrade path.** |
+| **C** | *This is my business, or I'm authorized to order this report for it.* | Tightest of the three, but "my business" quietly re-implies **ownership** — the precise failure this whole section exists to avoid. |
 
-**Recommendation: A.** B is the most legally complete and the only one that clearly covers an outside marketing contractor, but it is 27 words and reads like terms. C is tightest but "my business" quietly re-implies ownership, which is the exact failure we are avoiding. A covers owner + employee, stays under 15 words, and an assistant can tick it honestly without pausing.
-
-Whichever is chosen, the **exact string** is what gets stored (§6) and what the version number tracks.
+A was chosen because it covers owner + employee, stays under 15 words, and an assistant can tick it honestly without pausing.
 
 ### 2.3 Presentation rules
 
@@ -282,7 +313,19 @@ Introducing an `awaiting_gbp_resolution` state would mean the same thing as `man
 
 ### 5.5 Notification
 
-`RESEND_API_KEY` already exists and `reports@rankoncall.com` is the DECIDED from-address (`AUTOMATION_PIPELINE_SPEC.md` §9). **Per-order, immediately, by email to Irene** — not a digest. The 3-business-day clock is already running (§8), a manual order has burned some of it before the question is even asked, and a daily digest can spend a third of the window doing nothing.
+`RESEND_API_KEY` already exists and `reports@rankoncall.com` is the DECIDED from-address (`AUTOMATION_PIPELINE_SPEC.md` §9). **Per-order, immediately, by email to Irene** — not a digest. The clock is already running (§8), a manual order has burned some of it before the question is even asked, and a digest can spend most of the window doing nothing.
+
+#### ⚠️ The 24-hour turnaround tightens this hard — be honest about it
+
+Under the original 3-business-day window, a manual order that arrived Friday evening could be answered Monday morning and still deliver comfortably. **Under §8's 24-hour turnaround it cannot.** A manual order now needs Irene's one-question answer inside the same day it arrives, including evenings and weekends.
+
+This is a genuine operational tightening and it should not be papered over. Three honest observations:
+
+1. **The volume is the saving grace.** Manual-path orders are the exception — most buyers find their listing on the candidate card, and §4's domain-match ranking should push that rate higher still. This is a handful of emails, not a shift.
+2. **A 2am manual order cannot be answered at 2am, and must not silently miss.** This is exactly what §8.5's delay email exists for, and it covers this case cleanly: an unanswered manual order **quarantines and triggers the delay email** rather than sitting silently until the deadline passes. The buyer gets a real revised date; Irene gets a full working day.
+3. **Therefore: an unanswered manual order must auto-quarantine on a timer, not wait for the deadline.** Proposed **T+12h from payment** — half the window. That leaves the buyer's revised window (§8.5) starting while the original promise is still intact, so they are told early rather than late. Waiting until T+24h to notice would mean the delay email arrives at the moment the promise is already broken, which is the one thing §8.5 exists to prevent.
+
+The T+12h figure is a proposal, not a decision — §10.
 
 The email needs: business name, city/state, the scanned URL, what the buyer typed, what Places was asked and what it returned, and a link or a command that records each answer. Enough to answer in under a minute without opening anything else.
 
@@ -377,7 +420,9 @@ Today, **payment gates all Places spend.** Every Places call happens in `confirm
 
 Moving that call in front of the paywall exposes a **1,000-call monthly budget to anonymous traffic.** At the proposed 5 lookups per IP per hour, a single determined visitor can consume 120 in a day. That is not a theoretical abuse case; it is one bored person.
 
-**Recommendation — split the field mask, and put most of the spend back behind payment:**
+> ### ✅ DECIDED by Irene, 2026-08-01 — split the field mask, as proposed
+
+**Split the field mask, and put most of the spend back behind payment:**
 
 | Stage | When | Field mask | SKU |
 |---|---|---|---|
@@ -407,51 +452,158 @@ Layered, because a single control that can be deleted from a dashboard is not a 
 
 ---
 
-## 8. `report_due_at` moves to the webhook
+## 8. Turnaround, the delivery clock, and the delay email
 
-### 8.1 Why it has to move
+### 8.1 ✅ DECIDED — 24 hours, not 3 business days
+
+> ### ✅ DECIDED by Irene, 2026-08-01 — turnaround is **24 hours from payment**
+>
+> Site copy reads **"within 24 hours."** The previous promise of 3 business days is retired everywhere.
+
+**The rationale, recorded so it is not relitigated:** the 3-business-day window was **padding for per-report human review.** It existed to give a person time to read every report before it went out. With full auto-send (`AUTOMATION_PIPELINE_SPEC.md` §1 item 1), the thing the padding was protecting no longer exists — and what remains is an unnecessary conversion hurdle on an impulse purchase. **A buyer coming off a Facebook ad for a $39 automated report will not wait three days.** The wait was never a feature; it was the cost of a process that has been removed.
+
+Note the pleasing symmetry with the §1.2 copy problem: `src/thank-you.njk` currently uses the human-review claim *to justify the wait* — "that's what the time is for." Removing the review and shortening the wait resolve each other. The old copy needed a replacement explanation for a three-day window; the new copy does not need one, because 24 hours on an automated product requires no excuse.
+
+### 8.2 Why the computation moves — and how much it simplifies
 
 `report_due_at` is computed today inside `confirm-business.js`'s POST handler (`computeDeliveryDeadline()`, line 285), at confirmation. Post-reorder, **confirmation happens before payment** — so leaving the computation there would start a delivery clock for someone who has not paid and may never pay.
 
-`FULFILLMENT_WORKER_SPEC.md` §3.2 is unambiguous that the deadline is a real commitment and that nothing may extend or recompute it. It must be computed **once**, at the first moment a paid obligation exists. That moment is `checkout.session.completed`.
+`FULFILLMENT_WORKER_SPEC.md` §3.2 is unambiguous that the deadline is a real commitment and that nothing may extend or recompute it. It must be computed **once**, at the first moment a paid obligation exists. That moment is `checkout.session.completed`. **That part is unchanged by the 24-hour decision.**
 
-### 8.2 The code MOVES. It is not rewritten.
+**What the 24-hour decision changes is that almost all of the computation disappears.**
 
-**Same 3-business-day rule. Same `America/Chicago`. Same US federal holiday table. Same 5:00 PM landing. Same ISO-with-offset plus human display string.** This is a relocation, not a redesign, and re-deriving the DST-safe zoned-wall-time arithmetic would be a pure downside.
+| | Before | After |
+|---|---|---|
+| Rule | 3 business days | **+24 hours** |
+| Weekend skipping | yes | **none** |
+| US federal holiday list | yes | **none** |
+| Landing hour | 5:00 PM | **none — it lands 24h after payment** |
+| Timezone | America/Chicago, load-bearing | America/Chicago, **display only** |
+| DST-safe zoned wall-time arithmetic | required | **not required** |
 
-Moving from `functions/api/confirm-business.js` to a new **`worker/src/delivery-clock.js`**, as a whole unit:
+The whole computation becomes `new Date(paidAt.getTime() + 24 * 60 * 60 * 1000)`, formatted for display in `America/Chicago`. A fixed 24-hour offset is an absolute duration, so it needs no zone arithmetic to be correct — the zone re-enters only when rendering a human-readable string.
 
-| Symbol | Current line |
-|---|---|
-| `DELIVERY_TIMEZONE`, `DELIVERY_ZONE_LABEL`, `DELIVERY_SLA_BUSINESS_DAYS`, `DELIVERY_HOUR` | 45–48 |
-| `US_HOLIDAYS` (2026–2027, observed weekdays) | 53–76 |
-| `pad2`, `dateKey`, `isBusinessDay`, `addCalendarDay` | 229–245 |
-| `zonedCalendarDate`, `zoneOffsetMinutes`, `zonedWallTimeToInstant`, `offsetIso` | 248–280 |
-| `computeDeliveryDeadline` | 285–299 |
+> ### This retires the `US_HOLIDAYS` 2027 expiry bug — for this path
+>
+> The previously-flagged defect (the holiday table ends 2027-12-24 and then silently treats every 2028 day as a business day, quietly shortening deadlines) **stops being load-bearing here.** Nothing in the 24-hour path consults it.
+>
+> **Do not delete the holiday code as part of this spec.** What depends on it today, checked rather than assumed:
+>
+> - **`functions/api/confirm-business.js` — the only consumer anywhere in the repo.** `US_HOLIDAYS`, `isBusinessDay`, and `DELIVERY_SLA_BUSINESS_DAYS` appear at lines 47, 53, 234, 237, 283, 288, 290 and nowhere else. No other file in `functions/`, `worker/`, `lib/`, or `src/` references business-day or holiday logic.
+> - That consumer is the POST handler this spec retires anyway (§9.1), so **once the reorder lands the code is unreachable, not merely unused.**
+>
+> **Recommendation:** do not move it to `worker/src/delivery-clock.js` at all — the new clock does not need it. Let it die with the retired POST handler. If business-day math is ever wanted again (a support SLA, a refund window), it should be resurrected deliberately **with the holiday table extended first**, because the failure mode is silent.
 
-Export `computeDeliveryDeadline(instant)` returning `{ iso, display }`, unchanged in shape. It has no dependencies beyond `Intl` and `Date`, both available in Workers, so it moves without modification.
+### 8.3 What writes it — and ⚠️ when the clock actually starts
 
-> The `US_HOLIDAYS` set covers 2026–2027 only and the source comment says "extend as years roll." Moving it does not fix that. **It silently produces wrong deadlines from 2028-01-01** — every day becomes a business day. Worth an explicit calendar reminder or a startup assertion that the table covers the current year. §10.
-
-### 8.3 What writes it
-
-In `worker/src/index.js`, after the §1.4 gate passes and before `insertJob`: call `computeDeliveryDeadline(new Date())` and write `report_due_at` (and a new `report_due_display` column) into the job row as part of the same insert. It is then set once, in the durable record, by the only component that knows payment has actually happened.
-
-**Do not write it back to Stripe.** Today it round-trips through PaymentIntent metadata because the Pages Function had nowhere else to put it. The Worker has D1. Stripe metadata is not the system of record for anything the Worker owns.
+`worker/src/delivery-clock.js` exports `computeDeliveryDeadline(paidAt)` → `{ iso, display }`, same shape as today so nothing downstream changes. In `worker/src/index.js`, after the §1.4 gate passes and before `insertJob`, the result is written into the job row as part of the same insert.
 
 **`schema.sql` gains `report_due_display TEXT`.** `report_due_at` already exists.
 
-### 8.4 ⚠️ The buyer-facing consequence
+**Do not write it back to Stripe.** Today it round-trips through PaymentIntent metadata because the Pages Function had nowhere else to put it. The Worker has D1. Stripe metadata is not the system of record for anything the Worker owns.
+
+> ### ⚠️ The clock must start from the PAYMENT, not from when we process the webhook
+>
+> This did not matter at three business days. **At 24 hours it matters a great deal**, and it is a new correctness requirement created by this decision.
+>
+> The natural implementation is `computeDeliveryDeadline(new Date())` — the time the webhook handler runs. But the webhook does not necessarily run at payment time. Piece 1 returns **500 on a transient Stripe failure, on a D1 write failure, and on an enqueue failure**, in each case deliberately asking Stripe to retry. Stripe's retry schedule spreads over hours. A webhook that only succeeds on its third attempt would compute a deadline several hours later than the buyer's expectation — the buyer's expectation having been set at checkout by site copy that says "within 24 hours" of *paying*.
+>
+> That divergence is silently in our favour, which is exactly why it would never be noticed until a customer pointed at their receipt.
+>
+> **Use the payment's own timestamp.** The Stripe event carries `created` (Unix seconds); the Checkout Session object is already retrieved and carries its own timestamps. Compute from that, not from `Date.now()`. It is one line, it is correct by construction, and it makes the deadline independent of our own retry behaviour.
+>
+> Same reasoning applies to the resume path: a stranded order recovered hours later must not silently receive a fresh 24 hours.
+
+### 8.4 The buyer-facing consequence — now simpler
 
 Today `/thank-you/` shows the deadline because the confirmation POST returns it in the response body (`confirm-business.js:405–410`). Post-reorder, the deadline is computed inside the Worker, **after** redirect to `/thank-you/`, and the page has no way to read it.
 
-Options, none free:
+**The 24-hour decision largely dissolves this problem.** A rule-based string is now an adequate answer where it was not before: "within 3 business days" is vague enough to feel evasive, but **"within 24 hours" is a specific, checkable promise on its own** — the buyer does not need a rendered timestamp to know what they were told.
 
-1. `/thank-you/` polls a small read endpoint until the webhook has landed. Accurate; needs a loading state and a fallback if the webhook is slow.
-2. The page computes the same deadline client-side for display only, with D1 remaining the record. Instant, but two implementations of one rule is exactly how they drift — **not recommended**.
-3. Show the *rule* rather than the date — "within 3 business days" — and put the exact deadline in the confirmation email.
+**Recommendation: show the rule.** `/thank-you/` says *"It lands in your inbox within 24 hours."* The exact timestamp reaches the buyer in the delivery email, and D1 remains the single source of truth. No polling endpoint, no client-side duplicate of the rule, no loading state.
 
-**Recommendation: 3, with 1 as a later improvement.** It removes the dependency entirely, is honest, and the exact timestamp reaches the buyer in the email where it is more useful. Note this is a **copy change on a live page** and touches the same file as the §1.2 launch gate. Irene's call — §10.
+Two live files carry the old string and must change with it:
+
+| File | Line | Current |
+|---|---|---|
+| `src/assets/js/thank-you.js` | 227 | `"It lands in your inbox within 3 business days."` — the fallback branch |
+| `src/thank-you.njk` | 59 | build comment describing that fallback |
+
+Since the deadline is no longer fetched at all, the fallback branch **becomes the only branch** — `fillDeadline()` simplifies to a fixed string, and the `report_due_display` plumbing through the confirmation response can go.
+
+### 8.5 ⚠️ The delay email — the safety net that makes 24 hours survivable
+
+**A 24-hour promise is only responsible if a missed one is handled before the buyer notices.** This section is the mechanism, and it is a hard prerequisite for pointing traffic at the site (standing rule, top of document, condition **(b)**).
+
+#### The trigger is FAILURE, not lateness
+
+> **The delay email fires when a job quarantines. It does not fire when the deadline expires.**
+
+A job that fails at hour 2 sends the delay email **at hour 2** — not at hour 24. This is the entire design, and getting it backwards would defeat the purpose:
+
+- **A deadline-expiry trigger tells the buyer we noticed after we had already broken the promise.** By then they have been waiting, possibly checking, and the email is an apology.
+- **A failure trigger tells the buyer while the original promise is still intact.** It is an update, not an apology, and the difference in how it reads is the difference between a refund request and a shrug.
+
+**The buyer must never experience a silently missed promise.** There is no state in which the deadline passes with the buyer having heard nothing — either the report arrives, or a delay email arrived hours earlier with a real revised date.
+
+#### The revised window must be long enough for a human to act
+
+**Proposed: +24 hours from the moment the delay email is sent.**
+
+The reasoning is deliberate and is the design intent, not a round number:
+
+1. **It buys customer goodwill.** A specific revised date, given early, reads as competence.
+2. **It buys Irene a full working day.** A job that fails at 2am on a Tuesday sends its delay email at 2am and promises delivery by 2am Wednesday — which means Irene has all of Tuesday, during waking hours, to look at it.
+
+**Not every failure is auto-recoverable**, and that is the point. A quarantine may be a render that will not complete, a DataForSEO balance at zero (`FULFILLMENT_WORKER_SPEC.md` §7.1), or a Checkpoint 4 failure needing a judgement call. **Quarantine is automated recovery WITH a human fallback that has real time to operate.** A revised window shorter than a working day would give the automation a second chance but not the human, which defeats the reason the fallback exists.
+
+> **Write this down as design intent:** the revised window is sized for **the human**, not for the retry. The retry gets minutes; the person gets a day.
+
+#### ⚠️ Tone — what the email must not say
+
+**It must not say "technical issues," "an error," "a problem with our system," or anything in that family.** Telling a contractor the product he paid for is broken invites the refund request the email exists to prevent. He does not care what happened internally; he cares whether he is getting what he paid for and when.
+
+**It must give a real date. Never "soon," never "shortly," never "as soon as possible."** A vague reassurance is worse than the original silence, because it signals we do not know.
+
+Three drafts:
+
+**Draft A — always true, shortest**
+> Your Deep Dive is taking a bit longer than usual. You'll have it by **[Wednesday, October 8 at 2:00 AM Central]**. Nothing you need to do.
+
+**Draft B — acknowledges without explaining**
+> Quick update on your Deep Dive: it's running a little behind. You'll have it by **[date]** — we'll email it to this address the moment it's ready.
+
+**Draft C — frames the delay as care**
+> Your Deep Dive will be in your inbox by **[date]** — a little later than we first said. We hit something in the research worth a second look, and we'd rather get it right than get it fast.
+
+**Recommendation: A.** It is the only one that is **unconditionally true for every failure class.** C reads best and fits the honest-broker voice, but "something in the research worth a second look" is a *claim about what happened* — true for a Checkpoint 3 or 4 failure, false for a queue outage or an exhausted API balance. Sending it in those cases is a small lie in an email whose whole job is preserving trust. B is a safe middle.
+
+> ⚠️ If C is chosen, it must be **selected by failure class**, not used as the default. Do not let a nice sentence become a false one.
+
+**The revised date must render like the delivery deadline** — real, specific, in `America/Chicago` with the zone named (§8.2). And the email must not promise a second extension it cannot keep: **if the revised window also lapses, that is a different situation needing a different response**, and it is not designed here (§10).
+
+#### ⚠️ DEPENDENCY — this cannot exist until Piece 5
+
+**Stated plainly: the delay email is blocked on the Resend send path, which does not exist.**
+
+| | Status |
+|---|---|
+| Resend send path | **Not built** — `FULFILLMENT_WORKER_SPEC.md` §7.6 step 5 |
+| Email template | **Not designed** — §7.3, "not designed" |
+| `rankoncall.com` MX records | **None.** Replies to `reports@` bounce today |
+| DMARC | `p=none`, pending SPF+DKIM confirmation |
+
+**Consequence for sequencing, and it is a favourable one:** the **24-hour promise in the site copy is SAFE TO BUILD NOW**, because the standing rule at the top of this document means no traffic sees it until (a)–(d) hold. **The delay email is a hard prerequisite before traffic**, not before the copy.
+
+#### ⚠️ This promotes §7.5 quarantine alerting to a genuine launch blocker
+
+`FULFILLMENT_WORKER_SPEC.md` §7.5 currently treats the quarantine holding state as "sufficient to start building; not sufficient to launch." **The 24-hour turnaround makes that materially more urgent, and the reason is arithmetic.**
+
+At 3 business days, a job that failed on Friday night had **the entire weekend as slack.** Nobody had to notice until Monday, and the deadline still held. At 24 hours **there is no slack at all**: a job that fails at 2am has a deadline that expires before the next working day begins.
+
+**The delay email is the automated half and it does the heavy lifting** — it converts a silent miss into an early, specific update without anyone being awake. But it explicitly buys time *for a human to act*, and that only means something if the human is **told**. An unmonitored quarantine queue with a delay email attached just moves the silent failure 24 hours later.
+
+**So (b) and (c) in the standing rule are one requirement wearing two hats, and neither is optional.**
 
 ---
 
@@ -465,14 +617,23 @@ Options, none free:
 |---|---|---|
 | `src/` confirmation UI | **NET-NEW** page/step: candidate cards, attestation, owner name | New surface, no existing behaviour to break |
 | `src/index.njk` scan area | **+1 line** of free-tier expectation text (§2.4) | Copy only |
+| `src/index.njk:72` | **Remove the human-review sentence** (standing rule) | Copy — no traffic |
+| `src/index.njk:64–68` | **Update the build comment** that records per-report review as a COMMITTED PRODUCT FEATURE — it instructs future sessions not to drop the claim, so leaving it restores the claim | Comment — but load-bearing on future behaviour |
+| `src/thank-you.njk:63` | **Remove the human-review sentence** (standing rule) | Copy — no traffic |
+| `src/thank-you.njk:59` | Update the build comment describing the deadline fallback (§8.4) | Comment |
+| `src/assets/js/thank-you.js:227` | `"within 3 business days"` → **"within 24 hours"**; `fillDeadline()` simplifies to a fixed string | Copy + small logic |
 | `functions/api/confirm-lookup.js` | **NET-NEW** — pre-payment Places lookup, rate limited, Pro-SKU mask | New route |
 | `functions/api/checkout.js` | Accepts confirmation + attestation; writes the attestation row; puts confirmation into Session metadata; **drops `custom_fields`** | **Live payment path — highest risk** |
-| `functions/api/confirm-business.js` | POST retired; GET superseded | See ⚠️ below |
+| `functions/api/confirm-business.js` | POST retired; GET superseded. Takes the holiday/business-day code with it (§8.2) | See ⚠️ below |
 | `functions/api/intake.js` | None | Still post-payment, still PaymentIntent |
 | `functions/api/scan.js` | **None** | Untouched; zero-Places property preserved |
-| `worker/src/index.js` | Read confirmation from **Session** metadata; compute + store the deadline | Not deployed — free to change |
+| `src/robots.txt` or `src/_headers` | **NET-NEW** — indexing posture (§9.5) | New file |
+| `worker/src/index.js` | Read confirmation from **Session** metadata; compute + store the deadline from the **payment timestamp** (§8.3) | Not deployed — free to change |
 | `worker/schema.sql` | `attestations` table; `gbp_resolution*` columns; `report_due_display` | Not deployed |
-| `worker/src/delivery-clock.js` | **NET-NEW** — the moved clock | Relocation |
+| `worker/src/delivery-clock.js` | **NET-NEW** — 24-hour clock. Does **not** carry the holiday table across (§8.2) | Simplification |
+
+> ⚠️ **Three OTHER documents still say "3 business days" and are now stale.** Out of scope for this spec, which may not edit them, but they will mislead a future session:
+> `FULFILLMENT_WORKER_SPEC.md` lines **48, 64, 235, 368** — including §3.2, which states the full 3-business-day/5PM/holiday rule as the delivery clock. **§3.2 in particular now contradicts §8 of this document.** Needs its own dispatch.
 
 > ⚠️ **`confirm-business.js` cannot simply be deleted.** `intake.js:20` imports `json`, `loadPaidSession`, and `stripePost` from it. Deleting the file breaks a live endpoint. **Leave the file in place**, neuter the POST (return `410 Gone`), and keep the helpers exported. Extracting them into a shared module is tidier and is a separate, later change — not part of this migration, where the goal is the smallest possible diff on live money paths.
 
@@ -483,9 +644,11 @@ Each step is independently safe and independently revertible.
 1. **D1 schema first** — `attestations`, the `gbp_resolution*` columns, `report_due_display`. Additive only; nothing reads them yet. Zero risk.
 2. **Worker changes** (Session-metadata read, moved clock). Still undeployed. **Teach it to read both shapes** — see 9.3.
 3. **`confirm-lookup.js`**, the new page, and rate limiting. Reachable but not yet linked from the funnel. Test it live against real Places responses without a single buyer seeing it.
-4. **Free-tier line** on the scan page. Copy only, independently revertible.
+4. **Copy pass, all of it at once** — the free-tier line, the human-review removals at `src/index.njk:72` / `src/thank-you.njk:63`, the build comment at `src/index.njk:64–68`, and "3 business days" → "within 24 hours". Per the standing rule the copy ships in its final form now. **Do this as one commit** so the site never sits in a half-updated state where it promises both human review and a 24-hour turnaround. Copy only, independently revertible.
 5. **⚠️ Flip the funnel** — the scan page routes to confirmation instead of checkout, and `checkout.js` starts writing Session metadata and drops `custom_fields`. **This is the only irreversible-feeling step and the only one that touches the payment path.** Ship it alone, watch it, and have step 6 ready.
 6. **Deploy the Worker and register the Stripe webhook** — after the reorder has been observed working, so it only ever sees new-shape sessions in practice while still handling old ones.
+7. **Indexing posture** — §9.5. Should land at or before step 4, since that is when the copy starts describing a product that cannot yet deliver.
+8. **⚠️ STOP. Everything above is buildable now. Nothing above permits traffic.** Conditions (a)–(d) of the standing rule are separate work tracked in `FULFILLMENT_WORKER_SPEC.md` §7.6 steps 4–6, and they gate advertising, indexing, and campaign links — not the build.
 
 ### 9.3 In-flight sessions created under the old flow
 
@@ -510,30 +673,63 @@ Because the webhook is not deployed until step 6, the realistic worst case is sm
 
 **The window is genuinely cheap right now, and it closes.** No deployed webhook, no live consumer of this metadata, and a `jobs` table with no production rows. Every one of those becomes false the day Piece 1 deploys.
 
+### 9.5 The launch gate in migration order, and the site's indexing posture
+
+The standing rule at the top of this document is a **release** gate, not a build gate. Everything in §9.2 steps 1–7 may ship while the site remains dark. What may not happen is **traffic** — advertising, indexing, search-console submission, or a campaign link — until (a) the Resend send path is live and verified end to end, (b) the delay email exists, (c) §7.5 quarantine alerting exists, and (d) Checkpoint 4 has been verified.
+
+> ### ⚠️ The site is currently indexable, and nothing prevents it
+>
+> Checked rather than assumed: **there is no `robots.txt` anywhere in the repo**, no `_headers` file, and no `<meta name="robots">` in `src/_includes/base.njk`. The default posture of a Cloudflare Pages site with no such controls is **fully crawlable and fully indexable.**
+>
+> Irene's ruling relies on the site having no traffic and not being indexed. That is true today by obscurity — nothing links to it — but it is **not enforced by anything**, and step 4 above is precisely when the site begins carrying a 24-hour delivery promise it cannot yet honour.
+>
+> **Recommendation — add both, and treat removal as a launch-checklist item:**
+>
+> 1. **`X-Robots-Tag: noindex` via a Pages `_headers` file** (or a `<meta name="robots" content="noindex">` in `base.njk`). **This is the control that actually works.** It is what prevents a page appearing in results.
+> 2. **A `robots.txt` with `Disallow: /`** as the polite signal that stops crawling in the first place.
+>
+> **Both, because they do different jobs and the difference is routinely misunderstood:** `robots.txt` `Disallow` prevents *crawling*, not *indexing* — a URL discovered from an external link can still be listed, with no description, because we told the crawler not to look. Only `noindex` prevents that. And `noindex` must be **crawlable** to be seen, so a `Disallow` that blocks the page also hides the `noindex` from the crawler. Belt and braces here means "the `Disallow` is the polite signal, the `noindex` is the actual control" — and it means **removing the `Disallow` before the `noindex`** when launching.
+>
+> **Removing these belongs to the launch checklist, alongside conditions (a)–(d).** Note the ordering trap: lifting `noindex` while the site is still `Disallow`-ed leaves it uncrawlable and therefore unindexable — a launch that silently does nothing.
+
 ---
 
 ## 10. Open questions for Irene
 
+**✅ Decided 2026-08-01 — closed, kept for the record**
+
+- ~~Which attestation string?~~ **Candidate A, `v1`.** §2.2.
+- ~~Approve the Pro/Enterprise field-mask split?~~ **Approved as proposed.** §7.2.
+- ~~`/thank-you/` deadline display?~~ **Resolved by the 24-hour decision** — show the rule, no polling endpoint. §8.4.
+- ~~When does the §1.2 copy change ship?~~ **Now.** The gate moved from copy to traffic — standing rule, top of document.
+
 **Product**
 
 1. **Does the extra pre-payment step cost more conversion than the wrong-business refunds it prevents?** The core trade of this entire document, and it is a judgment call about the buyer, not an engineering question. §1.1.
-2. **Which attestation string — A, B, or C?** §2.2. A is recommended. Whichever is chosen becomes `v1` and is stored verbatim forever.
-3. **`/thank-you/` deadline display** — show "within 3 business days" and put the exact date in the email (recommended), or add a polling endpoint? §8.4. Note this touches the same live page as the §1.2 launch gate.
-4. **Is the owner-name field a hard requirement?** It is proposed as required (§3.1). A buyer who genuinely does not know it — a newly hired office manager — is blocked at the payment step. Required is the recommendation; the cost is real.
+2. **Is the owner-name field a hard requirement?** It is proposed as required (§3.1). A buyer who genuinely does not know it — a newly hired office manager — is blocked at the payment step. Required is the recommendation; the cost is real.
+3. **Which delay-email draft — A, B, or C?** §8.5. **A recommended**, because it is the only one unconditionally true for every failure class. If C is chosen it must be selected by failure class, never used as the default.
+
+**New — created by the 24-hour decision**
+
+4. **⚠️ Does the clock start from the payment timestamp or from webhook processing time?** §8.3. **Payment timestamp recommended**, and this needs an explicit ruling because the naive implementation silently grants us extra hours whenever a webhook retries. At 3 business days this was noise; at 24 hours a Stripe retry schedule can eat a quarter of the window.
+5. **Auto-quarantine timer for an unanswered manual order — T+12h?** §5.5. Needed so an unanswered manual order triggers the delay email while the original promise is still intact, rather than at the moment it breaks.
+6. **⚠️ Does DataForSEO's SERP integration use LIVE endpoints or task-based ones?** Not previously a question. `FULFILLMENT_WORKER_SPEC.md` §7.4 says "DataForSEO SERP API, direct" without specifying, and task-based/standard-priority SERP results can take **minutes to hours** to return. That is invisible inside 3 business days and material inside 24 hours. **Live endpoints cost meaningfully more per call**, which feeds straight back into the §7.1 balance question below. Needs deciding before Piece 3, not during it.
+7. **§7.1 DataForSEO billing coupling gets sharper.** A balance drained by an unrelated project at 2am used to have three days of slack to be noticed and topped up. It now has hours. `FULFILLMENT_WORKER_SPEC.md` §7.1 already says "decision needed before first live report" — the 24-hour turnaround makes the monitored-balance-floor option substantially less adequate than the separate-sub-account option.
+8. **What happens if the revised window in §8.5 also lapses?** Deliberately not designed. A second delay email risks a credibility spiral; silence is worse. Probably belongs with §7.5's quarantine design.
+9. **The VPS has no slack now.** `FULFILLMENT_WORKER_SPEC.md` §2.2 calls the render box disposable — "if it dies, spin up another; the queue holds the work meanwhile." That reasoning assumed days. Spinning up a replacement by hand is not a 24-hour-compatible recovery unless someone is awake. The delay email covers the buyer; it does not make the box come back.
 
 **Legal**
 
-5. **Lawyer review of the attestation wording, the privacy-policy disclosure for IP/user-agent, and indefinite retention.** §6.4. Explicitly outside what this document can settle.
+10. **Lawyer review of the attestation wording, the privacy-policy disclosure for IP/user-agent, and indefinite retention.** §6.4. Explicitly outside what this document can settle. Note the attestation wording is now DECIDED as `v1` — a lawyer's revision would make it `v2`, which is exactly what the versioning is for.
 
 **Cost and abuse**
 
-6. **Approve the Pro/Enterprise field-mask split?** §7.2. It restores most of the broken payment-gates-Places invariant at the cost of one extra call per paid order and a plainer candidate card.
-7. **Fail-open on the secondary rate-limit counter** when its store is unavailable? §7.3. Fail-open risks budget; fail-closed blocks real buyers.
-8. **Should `scan.js` have its own rate limit?** Pre-existing exposure, unchanged by this reorder, but there is no rate limiting anywhere in `functions/` today. Out of scope here; worth a decision.
+11. **Fail-open on the secondary rate-limit counter** when its store is unavailable? §7.3. Fail-open risks budget; fail-closed blocks real buyers.
+12. **Should `scan.js` have its own rate limit?** Pre-existing exposure, unchanged by this reorder, but there is no rate limiting anywhere in `functions/` today. Out of scope here; worth a decision.
 
 **Deferred / already flagged elsewhere**
 
-9. **The `intent_*` timing race.** §1.3 — the webhook fires before the buyer fills the intake form. Not caused by this reorder, not solved by it. Belongs to Piece 3.
-10. **`US_HOLIDAYS` runs out at the end of 2027** and fails silently, treating every 2028 day as a business day. §8.2.
-11. **Quarantine overlap.** §5.5 — the manual-resolution queue is the natural home for §7.5's undesigned holding state. Flagged deliberately; not designed here.
-12. **Docs-only cleanup:** the metadata key stays `ownership_attested` while the displayed wording asserts affiliation (§1.2). `AUTOMATION_PIPELINE_SPEC.md` §1 item 4 and `FULFILLMENT_WORKER_SPEC.md` §1.4 both use "ownership" language that will read as stale. Worth a one-line note in each rather than a rename.
+13. **The `intent_*` timing race, now sharper.** §1.3 — the webhook fires before the buyer fills the intake form. **The 24-hour turnaround makes this worse**, because it pushes the pipeline to start immediately, which is exactly what makes it beat a buyer still typing. Not caused by this reorder; belongs to Piece 3.
+14. **`US_HOLIDAYS` expiry — mostly retired.** §8.2. The 24-hour clock does not consult it, and its only consumer (`confirm-business.js`) is retired by this spec, so the 2028 defect stops being reachable. **Do not delete the code as part of this spec**; if business-day math is ever wanted again, extend the table first — the failure is silent.
+15. **Quarantine overlap.** §5.5 — the manual-resolution queue is the natural home for §7.5's undesigned holding state. Flagged deliberately; not designed here. **§8.5 promotes this from "before launch" to a named launch-gate condition (c).**
+16. **Docs-only cleanup, now two items.** (a) The metadata key stays `ownership_attested` while the displayed wording asserts affiliation (§1.2); `AUTOMATION_PIPELINE_SPEC.md` §1 item 4 and `FULFILLMENT_WORKER_SPEC.md` §1.4 both read as stale. (b) **`FULFILLMENT_WORKER_SPEC.md` lines 48, 64, 235, 368 still state the 3-business-day rule, and its §3.2 states the full 5PM/holiday computation — which now directly contradicts §8 of this document.** Both need a dispatch; this spec may not edit them.
