@@ -17,7 +17,7 @@ Irene made a set of decisions recorded in `docs/FUNNEL_REORDER_SPEC.md` (as amen
 | **§1.2** | The launch gate **moved** from "copy must not ship" to "traffic must not be pointed at the site" | The site has no traffic and is not indexed, so the copy ships in final form now |
 | **§1.4** | Confirmation and attestation now happen **pre-payment**. **The gate stays, unweakened** | It becomes an assertion that should rarely fire, rather than a routing fork |
 | **§3.1** | The both-objects read is **reduced, not eliminated** | The five `intent_*` fields stay on the PaymentIntent |
-| **§2.2, §7.1, §7.4** | Three recovery/cost assumptions that silently depended on a multi-day window | Flagged, not decided |
+| **§2.2, §7.1, §7.4** | Three recovery/cost assumptions that silently depended on a multi-day window | Flagged. §7.1 has since been **RESOLVED** — ROC has its own DataForSEO account |
 | §1.2 | `src/thank-you.njk` citation corrected from line 64 to **line 63** | It was wrong |
 
 **`docs/FUNNEL_REORDER_SPEC.md` is the authority for the funnel order, the attestation, and the launch gate.** This document is the authority for the worker. Where the two touch, that one describes *when things happen* and this one describes *what the worker does about it*.
@@ -421,8 +421,8 @@ All **ROC's own**, in ROC's own environment. Nothing shared with the productivit
 | `STRIPE_SECRET_KEY` | **Exists** | Already a Pages var (used by checkout/confirm/intake) |
 | `STRIPE_WEBHOOK_SECRET` | **NET-NEW** | Created when the webhook endpoint is registered in Stripe. No webhook exists today |
 | `ANTHROPIC_API_KEY` | **NET-NEW** | ROC's own. Not borrowed from any other project |
-| `DATAFORSEO_LOGIN` | **NET-NEW** | ROC's own copy. HTTP Basic auth |
-| `DATAFORSEO_PASSWORD` | **NET-NEW** | With the above. Billing coupling — §7.1 |
+| `DATAFORSEO_LOGIN` | **NET-NEW** | **ROC-owned, from ROC's own completely separate DataForSEO account** (§7.1, RESOLVED). Not the shared account. HTTP Basic auth |
+| `DATAFORSEO_PASSWORD` | **NET-NEW** | With the above, same isolated account. ⚠️ Account holds only the $1 signup credit — **must be funded before the first live report** (§7.1) |
 | `GOOGLE_PLACES_API_KEY` | **Exists** | Server-side only, never reaches the browser |
 | `RESEND_API_KEY` | **Exists** (per Irene) | Domain verification was in progress per §9 — confirm before first send |
 | `RENDER_SERVICE_TOKEN` | **NET-NEW** | Worker ↔ VPS. Same value on both ends; the VPS holds nothing else |
@@ -430,7 +430,24 @@ All **ROC's own**, in ROC's own environment. Nothing shared with the productivit
 
 **Six net-new, three existing.** Discipline, unchanged from the current codebase: secrets live only in the Cloudflare environment, never in the repo, never in client-side JS, never in a build artifact, never logged. The existing endpoints already hold this line — `scan.js` makes zero keyed calls, and `checkout.js` places `STRIPE_SECRET_KEY` in exactly one Bearer header and never in a returned object.
 
-**Queue and durable state** (Cloudflare Queues + KV/D1/Durable Object for the delivery-idempotency record) are infrastructure bindings, not secrets, but they are also net-new — there is no `wrangler.toml` in this repo today.
+> #### ⚠️ ORDER OF OPERATIONS — secrets go LAST, and the reason is not obvious
+>
+> **`wrangler secret put` cannot set a secret on a Worker that does not exist.** Running it early either errors or prompts to create a placeholder Worker, which is not the same thing as the deployed one and quietly diverges from it. **The correct order:**
+>
+> ```
+> 1. npx wrangler d1 create roc-fulfillment
+> 2. paste the printed database_id into wrangler.toml   ← deploy fails until this is done
+> 3. npx wrangler queues create roc-fulfillment
+>    npx wrangler queues create roc-fulfillment-dlq     ← BOTH; the DLQ must exist before deploy
+> 4. npx wrangler deploy                                 ← the Worker now exists
+> 5. npx wrangler secret put …                           ← only now
+> ```
+>
+> **`STRIPE_WEBHOOK_SECRET` is later still**, because Stripe only generates it when the endpoint is registered — and the endpoint URL comes from step 4. So that one is: deploy → register in Stripe → `secret put`.
+>
+> Full runbook in `worker/README.md`.
+
+**Infrastructure bindings** — Cloudflare Queues (`roc-fulfillment`, `roc-fulfillment-dlq`) and **D1** for the job store and delivery-idempotency record — are not secrets but are also net-new. **`worker/wrangler.toml` now exists** and declares all three; `database_id` is still a placeholder until `wrangler d1 create` is run.
 
 ---
 
@@ -466,25 +483,56 @@ All **ROC's own**, in ROC's own environment. Nothing shared with the productivit
 
 ## 7. Open questions for Irene
 
-### 7.1 DataForSEO billing coupling
+### 7.1 ✅ RESOLVED 2026-08-01 — DataForSEO billing coupling is ELIMINATED
 
-ROC calling DataForSEO directly with its own credentials **still draws the same account balance** unless given separate billing. That account showed **$31.46** and is shared with whatever else uses it.
-
-**The risk is concrete:** a report fails to generate because an unrelated project drained the balance — a fulfillment failure with a contractual deadline attached, caused by something outside this project entirely. That's the coupling §1.3 exists to eliminate, surviving in the billing layer after being removed from the code layer.
-
-Options: separate DataForSEO sub-account for ROC (cleanest); a monitored balance floor with alerting; or accept the coupling and document it. **Note also that `PROJECT_MASTER.md` §210 records DataForSEO throwing false balance readouts** — so any automated balance check must confirm via a real call before alarming.
-
-**Decision needed before first live report.**
-
-> #### ⚠️ AMENDED 2026-08-01 — the 24-hour turnaround materially weakens the middle option
+> ### ROC has its own completely separate DataForSEO account.
 >
-> **A monitored balance floor is a "notice it and top it up" control, and it silently assumed there would be time to do both.** At three business days there was: a balance drained overnight by an unrelated project could be spotted the next morning and refilled with the deadline still comfortably intact. **At 24 hours (§3.2) that slack is gone.** A balance hitting zero at 2am fails every order arriving behind it, and the alert lands in front of a human several hours later with the window already substantially spent.
+> **Not a sub-account. Not the shared ~$31.46 balance.** Irene created a **new, independent account** for Rank On Call and verified it in the dashboard: new account, **$1 signup credit**, **no prior usage**, account verified.
+
+**The coupling is gone at the billing layer, which is where it survived.** §1.3 removed it from the code layer — ROC calls DataForSEO directly with its own credentials rather than through a shared worker — but a shared *balance* would have re-created exactly the same failure mode one level down. It no longer exists.
+
+#### What this closes
+
+| Closed | Was |
+|---|---|
+| **Shared-balance drain** | A report failing because an unrelated project spent the money. Structurally impossible now — nothing else can reach this balance |
+| **"Monitored balance floor" vs. sub-account** | Moot. Neither option was taken; full isolation is stronger than both |
+| **The sharpened 24-hour concern** | A balance drained overnight by unrelated work, with no slack to notice and top up before the deadline. Cannot happen |
+
+**A `40200` insufficient-funds error is still possible** — but **only from ROC's own spend**, which is *attributable* and *predictable*. That is an entirely different class of problem: a known burn rate against a known balance, not an outside actor with no visibility into our deadlines. It becomes ordinary capacity planning.
+
+**`PROJECT_MASTER.md` §210's false-balance warning still stands** as an operational note, and its cause is now diagnosed and closed (see §7.4, anti-pattern 2 — a `-1` sentinel propagating through a subtraction in the client, never a DataForSEO fault). Any automated balance check ROC builds must still treat a failed probe as **unknown, never as a number.**
+
+#### ⚠️ What this ENABLES — the real gain
+
+**Per-report API cost is now measurable.** With a shared balance, ROC's spend was indistinguishable from everyone else's; with an isolated account, **every cent that moves is a Rank On Call report.**
+
+**That means a $39 report has a knowable COGS**, which is the number the entire business model rests on and which has never been measured. It also means burn rate becomes a forecastable input rather than a mystery, and an anomaly — a runaway loop, an unbounded retry — is visible as a cost spike instead of hiding in someone else's usage.
+
+> **⚠️ Record the actual API spend of the FIRST live report.** Current estimates are **~3–5 cents per report** and are **unverified**. They are dominated by the **depth-100 branded sweep**, where the depth multiplier is the least certain term — DataForSEO prices deeper result sets above shallow ones, and a depth-100 call is not simply one call's worth of cost.
 >
-> The alerting still has value — it is how anyone finds out at all — but it has stopped being a *mitigation* and become a *notification*. **The separate sub-account is now the materially stronger option**, because it prevents the failure rather than reporting it. Its whole point is that no unrelated project can reach the balance in the first place.
->
-> Note the compounding interaction with §7.4's endpoint decisions below: **live SERP endpoints cost more per call** than task-based, and **`live/advanced` costs more than `live/regular`**, so ROC's two endpoint choices both draw the shared balance down faster than the cheapest available option.
->
-> **Neither reopens this question.** Both are still fractions of a cent against a $39 report, so the margin is untouched — what they change is the *rate* at which a shared balance depletes, which is an argument about the sub-account, not about the endpoints. The call volume is bounded and known: 2–4 unbranded ranking queries plus a branded sweep and up to three targeted verifications, so roughly **five to eight SERP calls per report**.
+> This is a one-time, five-minute measurement with a permanently useful answer, and it is cheapest to take on the very first report. **Take it before the estimate hardens into a number people quote.**
+
+#### Pricing facts — verified against DataForSEO's published pricing
+
+| Fact | |
+|---|---|
+| Model | **Pay-as-you-go.** No monthly fee, no subscription |
+| Minimum deposit | **$50** |
+| Credit expiry | **None — credits do not expire** |
+| Signup credit | **$1** (currently the account's entire balance) |
+| Live SERP | **~$0.002 / query** |
+| Standard queue | ~$0.0006 / query |
+
+**Live costs roughly 3× the standard queue, and that is a deliberate choice**, not an oversight — the live-only decision in §7.4 was made on latency grounds against the 24-hour deadline (§3.2). At five to eight SERP calls per report the difference is well under two cents. **Do not "optimize" this back to the queue without reopening §7.4**; the latency tail is the thing that was being bought off.
+
+#### ⚠️ FUNDING — a hard prerequisite before traffic
+
+**The account currently holds only the $1 signup credit.** It **must be funded before the first live report**, or generation fails with `40200` and a paid order quarantines for a reason that has nothing to do with the code.
+
+**This is LAUNCH-GATE-adjacent, not a build blocker.** The $1 comfortably covers fixture capture and development calls — at ~$0.002 a query that is roughly 500 calls, far more than Piece 3 needs to be written and tested. **But it is a hard prerequisite before traffic is pointed at the site**, alongside the standing rule's four conditions in `FUNNEL_REORDER_SPEC.md`.
+
+Note the $50 minimum deposit: funding is not a $5 top-up decision, and credits do not expire, so there is no cost to doing it early.
 
 ### 7.2 VPS provider and sizing
 
@@ -558,7 +606,7 @@ v2.1 §10 binds each research task to an MCP tool this worker cannot call. Repla
 
 **This had to be decided here rather than during Piece 3**, because it is a 10× difference on a critical-path line item and the two implementations are not interchangeable after the fact.
 
-Note the volume for §7.1's balance question: branded listing lookups are additional billed SERP calls per report, on top of the 2–4 unbranded ranking queries — now bounded at roughly four rather than ten.
+Note the volume for §7.1's COGS measurement: branded listing lookups are additional billed SERP calls per report, on top of the 2–4 unbranded ranking queries — now bounded at roughly four rather than ten. With an isolated account this is a measurable line item rather than a shared-drain risk.
 
 #### ✅ RESOLVED 2026-08-01 — LIVE/instant endpoints only. Task-based is not used.
 
@@ -578,7 +626,7 @@ Note the volume for §7.1's balance question: branded listing lookups are additi
 >
 > Task-based endpoints are **not used**. A deployed implementation running this workload has never needed them, which removes the latency tail from the §3.2 critical path entirely and settles the wall-clock question in favour of a report measured in minutes.
 >
-> The cost consequence stands and feeds §7.1: **live endpoints cost more per call**, so this draws the shared balance down faster and sharpens the sub-account question rather than being independent of it.
+> The cost consequence stands and feeds §7.1: **live endpoints cost more per call** (~$0.002 vs ~$0.0006 for the standard queue). Since §7.1 resolved with ROC holding a **fully isolated account**, that is now a plain, attributable line item on ROC's own balance rather than a shared-drain risk — it is a COGS input, not a coupling.
 
 ### ⚠️ ANTI-PATTERNS in the reference implementation — do NOT carry these into the fork
 

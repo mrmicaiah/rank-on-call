@@ -64,19 +64,7 @@ npx wrangler queues create roc-fulfillment-dlq
 
 Both must exist before deploy — `wrangler.toml` declares a producer and two consumers against them, and the dead-letter target must already exist.
 
-### 4. Set the secrets
-
-Secrets are never in `wrangler.toml`, never in the repo, never logged.
-
-```sh
-npx wrangler secret put STRIPE_SECRET_KEY
-npx wrangler secret put STRIPE_WEBHOOK_SECRET
-```
-
-- `STRIPE_SECRET_KEY` — the same live/test key the Pages project already uses, but this Worker needs its **own** copy; bindings are not shared across projects.
-- `STRIPE_WEBHOOK_SECRET` — **net-new.** You do not have this yet. Stripe generates it in step 6, so run that step first and come back for this one.
-
-### 5. Deploy
+### 4. Deploy
 
 ```sh
 npm run deploy
@@ -84,11 +72,38 @@ npm run deploy
 
 Note the deployed URL, e.g. `https://rank-on-call-fulfillment.<subdomain>.workers.dev`.
 
+> **⚠️ Deploy BEFORE setting secrets.** `wrangler secret put` cannot set a secret on a Worker that does not exist — run it first and it either errors or prompts to create a *placeholder* Worker, which is not the same object as the deployed one and will quietly diverge from it. The Worker must exist before it can hold a secret.
+
+### 5. Set the secrets
+
+Secrets are never in `wrangler.toml`, never in the repo, never logged.
+
+```sh
+npx wrangler secret put STRIPE_SECRET_KEY
+npx wrangler secret put DATAFORSEO_LOGIN
+npx wrangler secret put DATAFORSEO_PASSWORD
+# STRIPE_WEBHOOK_SECRET — after step 6, see below
+```
+
+- `STRIPE_SECRET_KEY` — the same live/test key the Pages project already uses, but **this Worker needs its own copy; bindings are not shared between a Pages project and a Worker.**
+- `DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD` — from **ROC's own separate DataForSEO account**, not the shared one (`FULFILLMENT_WORKER_SPEC.md` §7.1). HTTP Basic auth. ⚠️ The account holds only its $1 signup credit; **fund it before the first live report** or calls fail with `40200`.
+- `STRIPE_WEBHOOK_SECRET` — **net-new, and you cannot set it yet.** Stripe generates it when the endpoint is registered in step 6, and the endpoint URL comes from step 4. Do step 6, then come back and run `npx wrangler secret put STRIPE_WEBHOOK_SECRET`.
+
+> **The same Pages-vs-Worker trap applies to keys that "already exist."** `GOOGLE_PLACES_API_KEY` is a Pages variable today, so Piece 3 will need its own `wrangler secret put` here even though it exists elsewhere. `RESEND_API_KEY` will hit this at Piece 5.
+
+> #### ⚠️ Do NOT enable IP whitelisting on the DataForSEO API Access page
+>
+> DataForSEO offers an IP allowlist as an account-level control. **Leave it disabled.**
+>
+> **Cloudflare Workers have no stable outbound IP.** Requests egress from whatever edge location handles them, and that address changes between invocations. An enabled allowlist would reject calls unpredictably — and it fails as an **authentication-shaped error**, so it would read as bad credentials rather than a network policy. That is a genuinely expensive hour to lose, and it would look identical to a mistyped password.
+>
+> If IP restriction is ever required, it has to terminate somewhere with a fixed address — the render VPS, or a Cloudflare egress product — not the Worker itself.
+
 ### 6. Register the endpoint in Stripe
 
 Stripe Dashboard → **Developers → Webhooks → Add endpoint**.
 
-- **Endpoint URL:** the Worker URL from step 5. The Worker serves the webhook at the root path, so no suffix is needed.
+- **Endpoint URL:** the Worker URL from step 4. The Worker serves the webhook at the root path, so no suffix is needed.
 - **Events to send:** select exactly one —
 
   ```
@@ -97,7 +112,7 @@ Stripe Dashboard → **Developers → Webhooks → Add endpoint**.
 
   Any other event type is acked with a 200 and ignored, so adding more just creates noise.
 
-- Click **Add endpoint**, then reveal the **Signing secret** (`whsec_…`) and feed it to `wrangler secret put STRIPE_WEBHOOK_SECRET` from step 4.
+- Click **Add endpoint**, then reveal the **Signing secret** (`whsec_…`) and feed it to `wrangler secret put STRIPE_WEBHOOK_SECRET` — the step-5 command you deferred.
 
 Do this in **test mode first**. Test and live mode have different signing secrets and different endpoints.
 
