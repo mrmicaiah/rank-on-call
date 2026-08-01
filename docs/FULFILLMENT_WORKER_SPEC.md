@@ -1,8 +1,26 @@
 # Rank On Call — Fulfillment Worker Spec
 
-**Status:** APPROVED — Irene reviewed 2026-07-31. Build may proceed per §7.6 sequencing. No worker code exists yet; nothing here is built.
+**Status:** APPROVED — Irene reviewed 2026-07-31. Build may proceed per §7.6 sequencing. **Piece 1 (webhook + job store + queue enqueue) is now built** — `worker/`, commit `d950011` — but not deployed. Everything downstream is still unbuilt.
 **Governed by:** `docs/AUTOMATION_PIPELINE_SPEC.md` — its §3/§4 (checkpoint template + research set), §5 (deterministic safety layer), §6 (privacy locks), and §7 (deliverable shape) are **inputs to this spec, not things it redefines.** Where this document and that one disagree, that one wins and this one is wrong.
 **Scope:** the worker that implements that architecture. Everything from the Stripe webhook to the delivered email.
+
+---
+
+## ⚠️ AMENDED 2026-08-01 — reconciled with `docs/FUNNEL_REORDER_SPEC.md`
+
+Irene made a set of decisions recorded in `docs/FUNNEL_REORDER_SPEC.md` (as amended in `5d01ecc`) that this document contradicted. **These are reconciliations to decisions already made, not new proposals — the APPROVED status is unchanged.** What moved:
+
+| § | Change | Why |
+|---|---|---|
+| **§3.2** | **Delivery is 24 hours from payment**, not 3 business days. No weekend skipping, no holiday table, no 5:00 PM landing. America/Chicago is **display-only** | The 3-day window was padding for per-report human review; with auto-send it is a conversion hurdle on an impulse purchase |
+| **§3.2** | The clock starts from the **Stripe event timestamp**, never from webhook processing time | New requirement created by the shorter window — see the ⚠️ in §3.2 |
+| **§1.2** | The launch gate **moved** from "copy must not ship" to "traffic must not be pointed at the site" | The site has no traffic and is not indexed, so the copy ships in final form now |
+| **§1.4** | Confirmation and attestation now happen **pre-payment**. **The gate stays, unweakened** | It becomes an assertion that should rarely fire, rather than a routing fork |
+| **§3.1** | The both-objects read is **reduced, not eliminated** | The five `intent_*` fields stay on the PaymentIntent |
+| **§2.2, §7.1, §7.4** | Three recovery/cost assumptions that silently depended on a multi-day window | Flagged, not decided |
+| §1.2 | `src/thank-you.njk` citation corrected from line 64 to **line 63** | It was wrong |
+
+**`docs/FUNNEL_REORDER_SPEC.md` is the authority for the funnel order, the attestation, and the launch gate.** This document is the authority for the worker. Where the two touch, that one describes *when things happen* and this one describes *what the worker does about it*.
 
 **What this document is for:** the funnel takes money and captures a verified target. Nothing consumes that. This worker is the missing half of the business — see §6.
 
@@ -30,24 +48,28 @@ What earns the right to send unread is **the deterministic checkpoint layer (§4
 
 "Full automation" explicitly **includes the failure path**. The system auto-sends successes **and auto-quarantines failures**. A report that fails a hard checkpoint halts and routes to a holding state automatically, with no human required to catch it. Detect-and-quarantine is the floor. **Silent send-anyway is never acceptable.**
 
-### 1.2 ⚠️ LAUNCH GATE — the live copy must change first
+### 1.2 ⚠️ LAUNCH GATE — MOVED 2026-08-01: it is now about TRAFFIC, not copy
 
-**This is a hard gate on enabling the worker in production, tracked separately from the build. The worker can be built, tested, and staged while the copy still says what it says. It cannot be switched on.**
+> **This gate has moved and is no longer specified here.** The authoritative statement is the **STANDING RULE in the front matter of `docs/FUNNEL_REORDER_SPEC.md`**, which lists the four conditions that must all hold before traffic may be pointed at the site. **Do not restate those conditions anywhere else** — there is one source of truth and it is that block.
 
-Two live claims become false the moment this worker auto-sends:
+**What changed.** Irene ruled on 2026-08-01 that the site has no traffic, is not indexed, and is not advertised, so the copy should be built **exactly as it will finally read** rather than deferred. The gate was *"the copy must not ship."* It is now *"traffic must not be pointed at the site."*
 
-| File | ~Line | Live text |
+**What did NOT change: the reasoning.** A live claim the product cannot honour is a false statement to a paying customer. That is as true of the new 24-hour delivery promise as it was of the human-review claim — which is precisely why the gate moved rather than being dropped.
+
+> ⚠️ **To a future session: shipped copy is not permission to launch.** If you are reading this and the site copy already reads as final, that tells you nothing about whether the four conditions hold. Go and check them.
+
+The two claims that must be removed as part of the copy pass, recorded here because this document is where they were first identified:
+
+| File | Line | Live text |
 |---|---|---|
 | `src/index.njk` | 72 | "And nothing goes out unread — a person reads every report before it reaches your inbox." |
-| `src/thank-you.njk` | 64 | "Every report gets read by a person before it's sent — that's what the time is for." |
+| `src/thank-you.njk` | **63** | "Every report gets read by a person before it's sent — that's what the time is for." |
 
-`src/index.njk` also carries a build-time comment (~line 64) recording per-report review as a **COMMITTED PRODUCT FEATURE** with an explicit instruction not to quietly drop it. That comment must be updated in the same change, or the next session will read it as authority and restore the claim.
+`src/index.njk` also carries a build-time comment (lines 64–68) recording per-report review as a **COMMITTED PRODUCT FEATURE** with an explicit instruction not to quietly drop it. That comment must be updated in the same change, or the next session will read it as authority and restore the claim.
 
 Both landed 2026-07-25 in commit `fe132db`; `git log -S` confirms neither string has been touched since.
 
-**This is a deliberate product reversal, not an implementation detail.** It is a decision for Irene — and note the thank-you copy uses the review to justify the 3-business-day wait, so removing it leaves the delivery window needing a different explanation rather than none.
-
-**Sequencing:** copy change ships → verified live → worker enabled. Never the other order. A single auto-sent report while that copy is live is a false statement to a paying customer, and it is the kind of thing that gets screenshotted.
+**This is a deliberate product reversal, not an implementation detail** — and it is now a decision Irene has made, not one awaiting her. Note that the thank-you copy used the review to justify the delivery wait; with the wait cut to 24 hours (§3.2) that justification is no longer needed at all, so removing the claim leaves nothing requiring a replacement explanation.
 
 ### 1.3 Self-contained — this worker calls no existing MCP worker
 
@@ -61,7 +83,7 @@ Both landed 2026-07-25 in commit `fe132db`; `git log -S` confirms neither string
 | Report generation | **Anthropic API directly**, ROC's own key |
 | Delivery | **Resend**, already configured |
 
-Rationale: fulfillment must not break because someone redeployed a productivity worker, rotated a shared secret, or drained a shared API balance. A paid order is a contractual obligation with a 3-business-day deadline attached; it cannot hang off infrastructure this project doesn't control.
+Rationale: fulfillment must not break because someone redeployed a productivity worker, rotated a shared secret, or drained a shared API balance. A paid order is a contractual obligation with a **24-hour deadline** attached; it cannot hang off infrastructure this project doesn't control. **The shorter window makes this argument stronger, not weaker** — there is no longer a weekend of slack in which someone else's outage can be noticed and worked around.
 
 #### ⚠️ The owned copy of the skill must be FORKED, not copied
 
@@ -96,6 +118,20 @@ Anything else — missing, empty, `confirmation_method === "manual"` with no pla
 This is not a quality preference. Three businesses can share a name, and emailing a polished, confident, completely wrong report about someone else's company — with a Stripe receipt attached — is the single highest-consequence failure available to this product. The confirmation gate exists so that never happens; this worker must not be the thing that undoes it.
 
 **Note the interaction with §1.1:** full auto-send is safe *because* this gate is upstream of it. The buyer verified the target at the moment of highest engagement. Auto-send without buyer confirmation would be indefensible; auto-send after it is merely automated.
+
+> #### ⚠️ AMENDED 2026-08-01 — confirmation is now PRE-payment. The gate STAYS.
+>
+> Per `docs/FUNNEL_REORDER_SPEC.md`, confirmation and attestation now happen **before** the Checkout Session is created, not on `/thank-you/` afterwards. That changes what this gate *is*, but not whether it exists.
+>
+> **Before:** a genuine routing fork. A buyer could pay and then abandon the confirmation step, so a meaningful share of paid orders would legitimately arrive with no `confirmed_place_id`, and the gate decided where they went.
+>
+> **Now:** an **assertion that should rarely fire.** Nobody can reach payment without confirming and attesting first, so a paid order lacking these fields means something upstream is broken — `checkout.js` failed to write the metadata, a session was created by some other path, or the fields were tampered with.
+>
+> **⚠️ Do not weaken or remove this gate on the grounds that the funnel already guarantees it. Belt and suspenders.** The reasoning is unchanged and is in the paragraph above: emailing a confident, polished, completely wrong report about someone else's company is the highest-consequence failure available to this product. A gate that never fires costs one string comparison. A gate that was removed because it "couldn't fire" costs a wrong report the first time an upstream assumption turns out to be false.
+>
+> **What does change is the response.** A firing gate is now a **signal of a defect**, not ordinary traffic. It still routes to manual/hold and still never generates — but it warrants an alert, because under the new funnel it should be approximately never. If it fires regularly, the funnel is broken and the gate is the only thing that noticed.
+>
+> The manual path (`confirmation_method === "manual"`, no `place_id`) still fails this gate by design and still routes to hold — see `FUNNEL_REORDER_SPEC.md` §5 for the no-GBP resolution step that unblocks those orders.
 
 ### 1.5 Internal accuracy bar — never printed
 
@@ -147,6 +183,20 @@ Settled during prior recon, **do not re-litigate:**
 - **Detect "is this page real" by rendered content** (body text > 500 chars AND ≥3 nav/header links), **never by marker strings** — passive Cloudflare scripts and contact-form reCAPTCHA widgets produce false "blocked" readings on perfectly good pages. **Do not use `<h1>`/`<h2>` presence as a content signal** — Squarespace puts hero copy in `<p>`.
 
 The box is disposable. If it dies, spin up another; the queue holds the work meanwhile.
+
+> #### ⚠️ AMENDED 2026-08-01 — "spin up another" assumed a multi-day window
+>
+> That recovery model was written against a 3-business-day deadline, where a box dying on Friday night could be replaced Monday morning and still deliver comfortably. **§3.2 is now 24 hours, and manual re-provisioning is not a viable recovery path unless someone happens to be awake.**
+>
+> The queue still holds the work — that part is unaffected, and no order is lost. What is lost is the *deadline*, silently, for every order that arrives while the box is down.
+>
+> **OPEN — needs an answer before launch, not decided here.** Three shapes, roughly in increasing cost:
+>
+> 1. **A pre-baked image plus a documented one-command rebuild**, so recovery is minutes of someone's attention rather than an evening of it. Cheapest; still requires a human.
+> 2. **A second standby box.** Doubles a $5–12/mo line item and removes the human from the critical path entirely.
+> 3. **Accept it and rely on the delay email** (`FUNNEL_REORDER_SPEC.md` §8.5), which converts a missed deadline into an early, specific revised promise. Free, and genuinely adequate for a rare failure — but it is a customer-communication answer to an infrastructure problem, and it stops being adequate if the box is unreliable rather than unlucky.
+>
+> Related and unresolved: §7.2 records that the VPS is **not yet rented**, so none of this is actionable until it exists.
 
 ### 2.3 Worker ↔ VPS: the interface
 
@@ -230,15 +280,52 @@ Two details from the existing code worth matching:
 
 **Steering inputs, not report content.** The five `intent_*` fields shape the research (query set, location parameter, Top-5 tie-breaking) and **never appear as text in the report.** Never write "not provided."
 
+> #### ⚠️ AMENDED 2026-08-01 — the split is REDUCED but NOT eliminated
+>
+> Under the funnel reorder (`FUNNEL_REORDER_SPEC.md` §1.2), every confirmation field moves from PaymentIntent metadata onto **Checkout Session metadata**, written at session creation. The Stripe `custom_fields` are dropped entirely, since the business name and city/state are collected and disambiguated on our own page first.
+>
+> **What that fixes:** the exact failure this section warns about — *"a consumer reading only the PaymentIntent gets no website to analyze and no business name"* — is gone. Post-reorder, the Checkout Session alone carries everything needed to run the §1.4 gate and aim the report.
+>
+> **What survives: the five `intent_*` fields stay on the PaymentIntent**, because `intake.js` is still post-payment and still appends there. So the `expand[]=payment_intent` retrieval does **not** go away, and a consumer that wants steering inputs still holds both objects. The table above remains correct for `intent_*`; the rows above it become Session-side.
+>
+> #### ⚠️ OPEN for Piece 3 — the `intent_*` timing race
+>
+> `checkout.session.completed` fires the instant payment succeeds. The buyer fills the intake form on `/thank-you/` **afterwards**. So **at webhook time the `intent_*` fields do not exist yet.**
+>
+> This is pre-existing — not caused by the reorder — but it has never been written down, and the 24-hour turnaround (§3.2) sharpens it in both directions: a tighter deadline pushes the pipeline to start immediately, which is exactly what makes it beat a buyer who is still typing, while also shrinking the room for the obvious fix.
+>
+> - **Piece 1 is correct as built** — it reads only the four confirmation fields and never touches `intent_*`.
+> - **The Piece 3 consumer must read them at research time, not from the queue message.** This is one of the reasons the queue carries ids only.
+> - **The failure is silent and mild:** absent `intent_*` is explicitly not an error ("Absent, not empty"), so the result is a less-targeted report and no alarm anywhere.
+> - **Candidate mitigations, undecided:** a short delay before the first research call, or a re-read of the PaymentIntent immediately before query construction. A deliberate delay was cheap against three days and is a real bite out of twenty-four hours, so the two pressures pull against each other and this needs choosing rather than assuming.
+
 ### 3.2 The delivery clock
 
-`report_due_at` is computed **once**, at confirmation: 3 business days (weekends and US holidays skipped), 5:00 PM **America/Chicago**, stored ISO with offset alongside a human `report_due_display`.
+**AMENDED 2026-08-01 — the rule is now 24 HOURS.** The previous rule (3 business days, weekends and US holidays skipped, 5:00 PM America/Chicago) is retired. Rationale, recorded in `FUNNEL_REORDER_SPEC.md` §8.1: the 3-day window was **padding for per-report human review**, and with full auto-send (§1.1) the thing it was protecting no longer exists. What remained was a conversion hurdle on a $39 impulse purchase.
+
+`report_due_at` is computed **once**, at `checkout.session.completed`: **payment timestamp + 24 hours**, stored ISO with offset alongside a human `report_due_display`.
+
+**What this removes:** no business-day counting, no weekend skipping, no US holiday table, no 5:00 PM landing hour, and no DST-safe zoned wall-time arithmetic. A fixed 24-hour offset is an absolute duration and needs no zone maths to be correct. **`America/Chicago` is now DISPLAY-ONLY** — it re-enters solely when rendering `report_due_display` for a human, and the zone must still be named explicitly in buyer-facing text.
+
+**Where it is computed also moves.** Confirmation is now pre-payment (§1.4 amendment), so computing the deadline at confirmation would start a delivery clock for someone who has not paid. It is computed in the **Piece 1 webhook** and written to the D1 `jobs` row. It is **not** written back to Stripe metadata — the Worker has a durable store and Stripe metadata is not the system of record for anything the Worker owns.
+
+> #### ⚠️ The clock starts from the STRIPE EVENT TIMESTAMP, never from webhook processing time
+>
+> **This is a hard requirement, and it is new.** At three business days it did not matter. At 24 hours it matters a great deal.
+>
+> The natural implementation is to call the clock with "now" — the moment the webhook handler runs. **That is wrong, because the webhook does not necessarily run when payment happened.** Piece 1 deliberately returns **500 on a transient Stripe failure, on a D1 write failure, and on an enqueue failure**, in each case to invite a Stripe retry. **Stripe's retry schedule spreads over hours.** A webhook that only succeeds on its third attempt would compute a deadline hours later than the buyer's expectation — an expectation set at checkout by site copy promising 24 hours from **paying**.
+>
+> **The divergence is silently in our favour, which is exactly why nobody would notice it** until a customer held up their receipt and asked.
+>
+> **Use the payment's own timestamp** — the Stripe event's `created` field, or the Checkout Session's own timestamps, both of which are already retrieved. Compute from that, not from `Date.now()`. One line, correct by construction, and it makes the deadline independent of our own retry behaviour.
+>
+> **Same reasoning applies to the resume path.** A stranded order recovered hours later (the `processing_pending` re-drive in `worker/src/index.js`) must not silently receive a fresh 24 hours.
 
 The buyer has been shown a specific deadline. **The pipeline must treat it as a real commitment:**
 
 - Jobs should complete far inside it — the window is a promise, not a target.
-- **Quarantine does not pause the clock.** A held job is still running out of time, and the buyer sees nothing. This is the sharpest open question in §7.
-- Nothing in the pipeline may extend or recompute the deadline. It is fixed at confirmation.
+- **Quarantine does not pause the clock.** A held job is still running out of time. **At 24 hours this is materially more urgent than it was at three days**, where a weekend absorbed an overnight failure and nothing absorbs it now. The buyer-facing answer is the **delay email** (`FUNNEL_REORDER_SPEC.md` §8.5), which fires on **failure, not on lateness** — a job failing at hour 2 emails at hour 2, so a missed promise is never experienced silently. The operational answer is §7.5, still undesigned.
+- Nothing in the pipeline may extend or recompute the deadline. It is fixed at payment.
 
 ### 3.3 Delivery
 
@@ -365,7 +452,7 @@ All **ROC's own**, in ROC's own environment. Nothing shared with the productivit
 
 **The read side of the metadata contract has never been built.** The contract is documented in `docs/BOT_ARCHITECTURE.md`, correct, and populated on every live purchase — and nothing has ever consumed it. Every `intent_*` field collected so far is **write-only data**.
 
-**This worker is the missing half of the business.** Today the product takes $39, verifies the target, promises delivery in 3 business days — and has no mechanism to deliver anything.
+**This worker is the missing half of the business.** Today the product takes $39, verifies the target, promises delivery **within 24 hours** (§3.2) — and has no mechanism to deliver anything.
 
 ---
 
@@ -380,6 +467,14 @@ ROC calling DataForSEO directly with its own credentials **still draws the same 
 Options: separate DataForSEO sub-account for ROC (cleanest); a monitored balance floor with alerting; or accept the coupling and document it. **Note also that `PROJECT_MASTER.md` §210 records DataForSEO throwing false balance readouts** — so any automated balance check must confirm via a real call before alarming.
 
 **Decision needed before first live report.**
+
+> #### ⚠️ AMENDED 2026-08-01 — the 24-hour turnaround materially weakens the middle option
+>
+> **A monitored balance floor is a "notice it and top it up" control, and it silently assumed there would be time to do both.** At three business days there was: a balance drained overnight by an unrelated project could be spotted the next morning and refilled with the deadline still comfortably intact. **At 24 hours (§3.2) that slack is gone.** A balance hitting zero at 2am fails every order arriving behind it, and the alert lands in front of a human several hours later with the window already substantially spent.
+>
+> The alerting still has value — it is how anyone finds out at all — but it has stopped being a *mitigation* and become a *notification*. **The separate sub-account is now the materially stronger option**, because it prevents the failure rather than reporting it. Its whole point is that no unrelated project can reach the balance in the first place.
+>
+> Note the compounding interaction with §7.4's live-vs-task-based question below: **live SERP endpoints cost more per call**, so choosing them for latency also draws the shared balance down faster.
 
 ### 7.2 VPS provider and sizing
 
@@ -404,6 +499,23 @@ v2.1 §10 binds each research task to an MCP tool this worker cannot call. Repla
 
 **Listings discovery — settled.** NAP consistency (§4.3 of the procedure) requires finding the business's Yelp/Angi/BBB/Facebook/Nextdoor/Houzz listings. **NAP is kept, not cut**, and listings discovery is sourced from the **DataForSEO SERP API repurposed for branded queries** — the same integration already required for unbranded ranking. **No additional search API and no additional key are needed**, so the cost model gains only query volume on an account this worker already calls. Note the volume for §7.1's balance question: branded listing lookups are additional billed SERP calls per report, on top of the 2–4 unbranded ranking queries.
 
+> #### ⚠️ OPEN 2026-08-01 — LIVE vs TASK-BASED SERP endpoints. Decide before Piece 3.
+>
+> **This was not previously a question, and the 24-hour turnaround (§3.2) made it one.** The table above says "DataForSEO SERP API, direct" without specifying which *kind* of endpoint, and the two behave very differently:
+>
+> | | Latency | Cost |
+> |---|---|---|
+> | **Task-based** (post a task, poll for results; standard priority) | **minutes to hours** | cheaper per call |
+> | **Live** (synchronous response) | seconds | **meaningfully more per call** |
+>
+> **At three business days the difference was invisible.** A SERP task that took two hours to come back was irrelevant to a deadline measured in days. **At 24 hours it is material**, especially compounded across the 2–4 unbranded ranking queries *plus* the branded listing lookups above, all of which sit on the critical path of a single report.
+>
+> **This must be decided before Piece 3 is built, not discovered during it.** It is not a tuning parameter — the two modes have different call shapes, different polling requirements, and different failure handling, and retrofitting one for the other means rewriting the caller.
+>
+> It also feeds straight back into §7.1: **choosing live endpoints for latency draws the shared balance down faster**, which sharpens the sub-account question rather than being independent of it.
+>
+> A plausible middle — task-based with **high priority**, or live only for the queries on the critical path — is worth pricing, but it is a decision, not a default.
+
 ### 7.5 The quarantine holding state — still undesigned
 
 `AUTOMATION_PIPELINE_SPEC.md` §8 flags this as **OPEN / UNDESIGNED** and it remains the largest hole. Unanswered: where a quarantined job goes; how Irene is notified; whether it auto-retries or waits; and **what the buyer sees while a job is held with their deadline still running** (§3.2).
@@ -421,9 +533,13 @@ This is the one place a narrow, earned human touch may re-enter — **not for ev
 5. **Resend send path** + the email template (blocked on §7.3).
 6. **Quarantine + alerting** (blocked on §7.5).
 
-**Then, and only then, the §1.2 copy change — and only then enable.**
+> **⚠️ AMENDED 2026-08-01 — this line previously read "Then, and only then, the §1.2 copy change — and only then enable."** That ordering is retired. **The copy change now ships early**, in its final form, because the gate moved from copy to traffic (§1.2). Steps 4, 5 and 6 above are no longer prerequisites for the *copy* — they are prerequisites for **pointing traffic at the site**, and they map onto conditions (d), (a) and (b)/(c) of the standing rule in `FUNNEL_REORDER_SPEC.md`'s front matter.
+>
+> **The sequence above is otherwise unchanged, and nothing in it got easier.** What changed is only which artifact the gate guards.
 
-A useful intermediate: run the full pipeline in **dry-run mode**, generating and checkpointing real reports for real paid orders but writing them to a holding location instead of sending, with Irene reading each one. That produces the evidence that Checkpoint 4 actually works before it becomes the only thing standing between a generated report and a customer's inbox — and it does it **without** touching the live copy, since nothing auto-sends yet.
+A useful intermediate: run the full pipeline in **dry-run mode**, generating and checkpointing real reports for real paid orders but writing them to a holding location instead of sending, with Irene reading each one. That produces the evidence that Checkpoint 4 actually works before it becomes the only thing standing between a generated report and a customer's inbox.
+
+> Note that the original justification for the dry run — *"it does it without touching the live copy, since nothing auto-sends yet"* — no longer applies, because the copy ships first now. **The dry run's real value was never the copy; it was the evidence.** It stands unchanged on that ground: it is the only way to know Checkpoint 4 works on real drafted output before it becomes load-bearing. And under the moved gate it is *easier* to run, since there is no traffic to disturb.
 
 ---
 
@@ -433,7 +549,7 @@ Recorded here as found. All entries below are now resolved; struck items are kep
 
 1. ~~**`AUTOMATION_PIPELINE_SPEC.md` §1 item 5** — says the client report skill *"is being rebuilt fresh."* v2.1 exists and matches §4. Stale.~~ **RESOLVED in `39d1c611`:** now described as done, naming `deep-dive-client-report` v2.1.
 2. ~~**`AUTOMATION_PIPELINE_SPEC.md` §3 (~line 58)** — still calls `lib/report-precheck.js` *"untracked."* Untrue since `47693b2`; the §5 instance was fixed and this one missed.~~ **RESOLVED in `39d1c611`:** the "untracked" claim removed; the UNVERIFIED / never-run / wired-to-nothing warning kept.
-3. ~~**`AUTOMATION_PIPELINE_SPEC.md` §1 item 2** — quotes the live tagline as *"The method is hand-built. The digging is automated. Nothing goes out unread."* That exact string appears nowhere in `src/`; `hand-built` returns zero matches. The claims are real, the wording is a paraphrase.~~ **RESOLVED in `39d1c611`:** replaced with the actual live copy, quoted with file:line for both `src/index.njk:72` and `src/thank-you.njk:64`.
+3. ~~**`AUTOMATION_PIPELINE_SPEC.md` §1 item 2** — quotes the live tagline as *"The method is hand-built. The digging is automated. Nothing goes out unread."* That exact string appears nowhere in `src/`; `hand-built` returns zero matches. The claims are real, the wording is a paraphrase.~~ **RESOLVED in `39d1c611`:** replaced with the actual live copy, quoted with file:line for both `src/index.njk:72` and `src/thank-you.njk:63` (the line number was corrected from 64 in the 2026-08-01 amendment).
 4. ~~**From-address** — `report@` vs `reports@`.~~ **RESOLVED at review 2026-07-31:** `reports@rankoncall.com` (plural), matching §9. See §3.3.
 5. ~~**`deep-dive-client-report` v2.1 §0 and §9** — assert permanent human review. Contradicts §1.1 and must be edited in the fork. §1.3.~~ **RESOLVED:** skill saved as **v2.2**, delivery-neutral; the ROC worker runs a fork with the human-review framing removed per §1.3.
 6. ~~**`AUTOMATION_PIPELINE_SPEC.md` status line** — reads `DRAFT` while its §1 is written as locked, non-reversible decisions this spec treats as settled.~~ **RESOLVED in `39d1c611`:** now reads "§1 decisions LOCKED and being built against."
