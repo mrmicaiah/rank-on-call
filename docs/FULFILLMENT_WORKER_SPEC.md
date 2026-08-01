@@ -482,7 +482,9 @@ Options: separate DataForSEO sub-account for ROC (cleanest); a monitored balance
 >
 > The alerting still has value — it is how anyone finds out at all — but it has stopped being a *mitigation* and become a *notification*. **The separate sub-account is now the materially stronger option**, because it prevents the failure rather than reporting it. Its whole point is that no unrelated project can reach the balance in the first place.
 >
-> Note the compounding interaction with §7.4's live-vs-task-based question below: **live SERP endpoints cost more per call**, so choosing them for latency also draws the shared balance down faster.
+> Note the compounding interaction with §7.4's endpoint decisions below: **live SERP endpoints cost more per call** than task-based, and **`live/advanced` costs more than `live/regular`**, so ROC's two endpoint choices both draw the shared balance down faster than the cheapest available option.
+>
+> **Neither reopens this question.** Both are still fractions of a cent against a $39 report, so the margin is untouched — what they change is the *rate* at which a shared balance depletes, which is an argument about the sub-account, not about the endpoints. The call volume is bounded and known: 2–4 unbranded ranking queries plus a branded sweep and up to three targeted verifications, so roughly **five to eight SERP calls per report**.
 
 ### 7.2 VPS provider and sizing
 
@@ -513,9 +515,13 @@ v2.1 §10 binds each research task to an MCP tool this worker cannot call. Repla
 
 `HomeAdvisor`, `Thumbtack` and `Porch` were missing from the earlier six.
 
-#### ✅ RESOLVED 2026-08-01 — how many branded queries, and why it is not ten
+#### ✅ DECIDED 2026-08-01 — how many branded queries, and why it is not ten
 
-**Recommendation: ONE deep branded sweep, plus targeted verification only where we intend to state absence.** Not one shallow query, and not ten blanket queries.
+> ### ONE deep branded sweep, plus targeted verification only where absence would itself be a finding.
+>
+> **Sweep:** `"<business name>" <city> <state>` on `serp/google/organic/live/advanced` at **depth ~100**, scanned for the ten platform domains.
+> **Verification:** targeted `site:` queries for **Yelp, BBB, Facebook** only.
+> **Worst case: four calls.** Not one shallow query, and not ten blanket queries.
 
 **First, the honest part: cost is NOT the deciding argument.** Live SERP calls run on the order of fractions of a cent, so ten-vs-one is roughly **$0.03 per report** — negligible against $39 and not worth designing around. Latency does not decide it either: the queries are independent and sit in the parallel stage, so ten of them cost about as much wall-clock as one. **Anyone arguing this on cost or speed is arguing the wrong axis.**
 
@@ -534,10 +540,21 @@ v2.1 §10 binds each research task to an MCP tool this worker cannot call. Repla
 
 **Worst case: 1 + 3 = four calls, not ten** — and every claim made is one we actually checked.
 
-> **The governing rule, which is the real output of this decision:**
-> **A platform may only be reported as absent if it was specifically checked.** Found in the sweep → audit it. Not found and not verified → `unread`, and **it is not mentioned at all**. Not found and verified → reportable.
+> ### ⚠️ HARD CONSTRAINT — A PLATFORM MAY ONLY BE REPORTED AS ABSENT IF IT WAS SPECIFICALLY CHECKED
 >
-> ⚠️ Even a verified `site:` miss is not proof of non-existence — Google's `site:` coverage is incomplete. So the phrasing must stay honest: **"we looked for a Yelp listing and couldn't find one"**, never *"you have no Yelp listing."* That is still a genuinely useful finding for a contractor — an unfindable listing and a nonexistent one cost him the same call — and it is one we can defend.
+> This is the real output of the decision, and it binds the generator regardless of how discovery is implemented.
+>
+> | Sweep result | Verified? | What the report may say |
+> |---|---|---|
+> | **Found** | — | Audit its NAP. Report the mismatch type, never the values |
+> | **Not found** | **not verified** | `unread`. **NOT MENTIONED AT ALL** — no finding, no red flag, no severity |
+> | **Not found** | **verified absent** | Reportable — *"we looked for a Yelp listing and couldn't find one"* |
+>
+> ⚠️ **Never write "you have no Yelp listing."** Google's `site:` coverage is incomplete, so **a miss is not proof of non-existence.** The honest phrasing is a statement about our search, not about the world, and it is the only one we can defend.
+>
+> **The honest phrasing is also still the useful one** — which is why this costs the product nothing. **An unfindable listing costs the contractor exactly the same call as a nonexistent one.** Either way the answer is the same: if it exists, it is not working; if it does not, that is the gap. He does not need us to know which to act on it.
+>
+> This is the fetch scar (§4, Checkpoint 1) applied to a case where the temptation is unusually strong, because absence *looks* like a finding sitting right there.
 
 **This had to be decided here rather than during Piece 3**, because it is a 10× difference on a critical-path line item and the two implementations are not interchangeable after the fact.
 
@@ -551,7 +568,7 @@ Note the volume for §7.1's balance question: branded listing lookups are additi
 
 | Endpoint | Used for |
 |---|---|
-| `serp/google/organic/live/regular` | SERP results — ⚠️ see anti-pattern 4 |
+| `serp/google/organic/live/regular` | SERP results — ⚠️ **ROC uses `live/advanced` instead**, see anti-pattern 4 |
 | `dataforseo_labs/google/related_keywords/live` | Keyword discovery |
 | `keywords_data/google_ads/search_volume/live` | Volume |
 | `on_page/instant_pages` | Page analysis — see the OPEN note below |
@@ -585,13 +602,46 @@ Two extra round-trips per call to render a nicety no automated pipeline reads. I
 
 That is not acceptable under Checkpoint 1 (§4), which requires **exponential backoff, ~2 attempts, 5–10 seconds apart** before a signal may be stamped `unread` — measured cold pass rates climb from ~67% to ~96% by the third try. Copying this client verbatim would convert a routine transient failure into a quarantined paid order.
 
-**4. ⚠️⚠️ MOST IMPORTANT — `serp/google/organic/live/regular` returns ORGANIC RESULTS ONLY. It cannot see the local pack.**
+**4. ✅ RESOLVED 2026-08-01 — `live/regular` cannot see the local pack. ROC uses `live/advanced`.**
 
-**For a local contractor the three-pack is the whole game.** Ranking #4 organically while being invisible in the map pack **is the finding** — arguably the single most valuable one this product can deliver — and this endpoint is structurally incapable of seeing it. A report built on it would examine the wrong surface and confidently report that everything is fine.
+**The gap was real.** `serp/google/organic/live/regular` returns **organic and paid results only**, and DataForSEO's own documentation states it does not provide a complete overview of featured snippets and other extra SERP elements. **For a local contractor the three-pack is the whole game** — ranking #4 organically while invisible in the map pack **is the finding**, arguably the single most valuable one this product delivers, and that endpoint is structurally incapable of seeing it. It also undercut §4's framing of unbranded ranking as *"the single sharpest finding"*, since for a local business the sharpest version of that finding lives in the pack, not the organic list.
 
-This directly undercuts §4's own framing of unbranded/near-me ranking as *"the single sharpest finding"*, since for a local business the sharpest version of that finding lives in the pack, not the organic list.
+> ⚠️ **This is a context difference, not a defect in SEO-Scout.** `live/regular` is the *correct* choice for content and keyword research, which is what that tool does. It is the wrong choice for local business audits. **Do not read this as a bug in that codebase** — read it as the reason its endpoint selection cannot be copied across without checking what it was selected for. Unlike anti-patterns 1–3, there is nothing here for SEO-Scout to fix.
 
-**ROC needs `live/advanced` or a local-finder endpoint.** **This is a capability gap, not a preference**, and the specific endpoint must be selected and verified against a real local query **before Piece 3 is built** — not discovered afterwards when the reports come out bland.
+**The decision is recorded immediately below.**
+
+#### ✅ DECIDED 2026-08-01 — `serp/google/organic/live/advanced`, for every SERP call
+
+Verified against DataForSEO's official documentation (`docs.dataforseo.com/v3/serp-google-organic-overview`, `/v3/serp-overview`), not from memory.
+
+> ### ROC uses **`serp/google/organic/live/advanced`** for ALL SERP calls — the unbranded ranking queries AND the branded sweep. One endpoint, no exceptions.
+
+| Why | |
+|---|---|
+| **It answers the headline finding** | `live/advanced` provides a complete overview of search results and is required for Google Maps data. The **`local_pack`** element type is available here and nowhere in `live/regular`. This closes anti-pattern 4. |
+| **It covers the branded sweep with no second endpoint** | Depth up to **100** supports the one-deep-sweep design below directly. No separate integration, no second call shape. |
+| **It is live** | No `task_post` / `task_get` polling. Consistent with the live-only decision above, and it keeps the §3.2 critical path free of the latency tail. |
+| **Cost** | More per call than `live/regular`, still fractions of a cent against a $39 report. Noted in §7.1 **without reopening the billing question** — the sub-account decision there is unaffected by this choice. |
+
+**One endpoint for everything is itself part of the decision.** Two endpoints would mean two response shapes, two parsers, and two failure modes on the critical path, for no capability the advanced response does not already carry.
+
+##### What Piece 3 must EXTRACT from the advanced response
+
+Recorded here so the caller does not have to rediscover it:
+
+| Extract | For |
+|---|---|
+| **Organic rank of the target domain** | the "Where you show up" ranking finding |
+| **`local_pack` presence AND position for the target business** | the headline three-pack finding — presence first, position second |
+| **The page-1 competitor set** | the competitor section, which **re-reads this response and never fetches a competitor site** (§4 CUT list) |
+
+Every ranking claim derived from this carries **exact query + location + date measured** (§4). The location must be the one actually sent — see anti-pattern 1.
+
+> #### OPEN — not blocking, Irene's call later: `serp/google/maps/live/advanced`
+>
+> A dedicated maps endpoint would give **local-finder depth** — the business's actual position in the full map listing, rather than the binary in-or-out of the three-pack that the `local_pack` element provides.
+>
+> **Deferred for v1.** *"You're not in the three-pack"* is the actionable finding, and it is the one a contractor can do something about; "you're 14th in the map listing" is more precise without being more useful. **Revisit if the reports read thin**, which is the honest trigger for reconsidering it.
 
 > #### OPEN — `on_page/instant_pages` and `enable_javascript`
 >

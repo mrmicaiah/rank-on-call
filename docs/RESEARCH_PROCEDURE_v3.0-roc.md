@@ -184,13 +184,23 @@ Every row is self-published, non-personal, and already retrieved for other purpo
 
 **All DataForSEO calls use LIVE / instant endpoints. Task-based is not used** (`FULFILLMENT_WORKER_SPEC.md` §7.4, DECIDED 2026-08-01).
 
-> ### ⚠️ Two inherited defects that must not be reproduced
+### ✅ The SERP endpoint — DECIDED 2026-08-01
+
+> **All SERP calls use `serp/google/organic/live/advanced`.** Unbranded ranking queries and the branded sweep alike. One endpoint, no exceptions. `live/regular` is **not** used — it returns organic and paid results only and **cannot see the local pack**, which for a contractor is the whole game. Full reasoning: `FULFILLMENT_WORKER_SPEC.md` §7.4.
+
+**What every SERP call must extract:**
+
+| Extract | Feeds |
+|---|---|
+| Organic rank of the target domain | §5.6 / "Where you show up" |
+| **`local_pack` presence and position for the target business** | the headline three-pack finding |
+| Page-1 competitor set | §5.6 — **re-read only, competitor sites are never fetched** |
+
+> ### ⚠️ One inherited defect that must not be reproduced
 >
-> Both are documented in full at `FULFILLMENT_WORKER_SPEC.md` §7.4; repeated here because this is the document a builder follows.
+> Documented in full at `FULFILLMENT_WORKER_SPEC.md` §7.4; repeated here because this is the document a builder follows.
 >
-> **1. Every ranking query MUST pass a real location.** The reference implementation accepts a `location` argument and silently ignores it, hardcoding `location_code: 2840` (United States). **A national-average ranking is worthless for a local contractor and looks exactly like a real finding.** The location actually used must be recorded on the claim, because §5 below requires it.
->
-> **2. ⚠️ `serp/google/organic/live/regular` cannot see the local pack.** Organic results only. **For a contractor the three-pack is the whole game** — ranking #4 organically while invisible in the map pack *is* the finding. A report built on that endpoint would examine the wrong surface and confidently report that all is well. **`live/advanced` or a local-finder endpoint is required, and must be selected and verified against a real local query before this procedure is built against.** Capability gap, not preference.
+> **Every ranking query MUST pass a real location.** The reference implementation accepts a `location` argument and silently ignores it, hardcoding `location_code: 2840` (United States). **A national-average ranking is worthless for a local contractor and looks exactly like a real finding.** The location actually used must be recorded on the claim, because §7 below requires it.
 
 ---
 
@@ -206,7 +216,17 @@ Carried across from `web-deep-dive` substantially unchanged, renumbered from the
 
 Per platform: name / address / phone **as listed**, rating, review count. Values are collected **for comparison only and never printed** (lock 2) — and under lock 3 they must not enter the generator's input object at all, only the derived mismatch types.
 
-**Discovery method — ONE deep branded query, plus targeted verification only where absence will be claimed.** Not ten blanket queries. The rule that makes this safe: **a platform may only be reported as ABSENT if it was specifically checked.** Anything merely not seen in the broad query is `unread` and is not mentioned. Full reasoning and cost model: `FULFILLMENT_WORKER_SPEC.md` §7.4.
+**✅ Discovery method — DECIDED 2026-08-01.** One deep branded sweep: `"<business name>" <city> <state>` on `live/advanced` at **depth ~100**, scanned for the ten platform domains. Then targeted `site:` verification for **Yelp, BBB, Facebook only** — the platforms where absence is itself actionable. **Worst case four calls, not ten.** Full cost model: `FULFILLMENT_WORKER_SPEC.md` §7.4.
+
+> ### ⚠️ HARD CONSTRAINT — a platform may only be reported as ABSENT if it was specifically checked
+>
+> | Sweep result | Verified? | What the report may say |
+> |---|---|---|
+> | Found | — | Audit its NAP. Mismatch type only, never values |
+> | Not found | not verified | `unread`. **NOT MENTIONED AT ALL** — no finding, no red flag, no severity |
+> | Not found | verified | *"We looked for a Yelp listing and couldn't find one"* |
+>
+> **Never "you have no Yelp listing."** `site:` coverage is incomplete, so a miss is not proof of non-existence. **An unfindable listing costs the contractor the same call as a nonexistent one**, so the honest phrasing is also the useful one — this costs the product nothing.
 
 **§5.3 — NAP consistency** *(was 2.4)*. Across the business's own site plus every listing found. **Reported by which platforms disagree and what kind of mismatch — never by value.**
 
@@ -268,25 +288,40 @@ Non-negotiable, applies to every finding this procedure produces:
 
 ## 8. Open items
 
+> ## ✅ NOTHING BELOW BLOCKS STARTING PIECE 3.
+>
+> The blocking list is **empty**. Every remaining item either constrains **one specific caller** (which can be built last or stubbed), or belongs to a **later build step** and gates auto-send rather than construction.
+
 **✅ Closed 2026-08-01 — kept for the record**
 
+- ~~SERP endpoint selection — the local pack.~~ **`serp/google/organic/live/advanced` for every call.** §4, `FULFILLMENT_WORKER_SPEC.md` §7.4.
+- ~~How many branded queries?~~ **One deep sweep + targeted verification. Four calls worst case.** §5.2.
 - ~~WHOIS/RDAP removal vs. §6 and `REQUIRED_SECTIONS`.~~ **Narrow RDAP restored** — three fields, by query construction. §2.3.
 - ~~Do review themes survive a 5-review sample?~~ **No. CUT entirely.** Rating and total count only. §2.5(b).
 - ~~Listings platform count: 6 or 10?~~ **Ten.** §5.2.
-- ~~Is `deep-dive-client-report` the fork source?~~ **No — it is the name this procedure takes on completion.** §0.
+- ~~Is `deep-dive-client-report` the source?~~ **No — it is the name this procedure takes on completion.** §0.
 
-**⚠️ Blocking — must be answered before this procedure is built against**
+### Constrains one caller — build that caller last, everything else proceeds
 
-1. **⚠️ SERP endpoint selection — the local pack.** `serp/google/organic/live/regular` returns organic results only and cannot see the three-pack, which for a local contractor is the whole game. `live/advanced` or a local-finder endpoint, **verified against a real local query** before Piece 3. Capability gap, not preference. §4 and `FULFILLMENT_WORKER_SPEC.md` §7.4.
+1. **Registrar availability API — unchosen.** §5.1's **no-website branch is not buildable** until it is. Everything else in §5.1 (the has-website path) is unaffected. A contractor with no website at all is a real and valuable case — and the one where the report has the most to say — so this is worth closing during Piece 3 rather than after it.
+2. **The render VPS is not rented** (`FULFILLMENT_WORKER_SPEC.md` §7.2). Blocks the **render caller only**. Places, DataForSEO, the bounded crawl and RDAP are all independent of it. Note §7.6 makes the render service its own build step, developed in parallel.
+3. **Test `on_page/instant_pages` with `enable_javascript: true` BEFORE building the VPS** (`FULFILLMENT_WORKER_SPEC.md` §7.4). One call answers whether it narrows the VPS's scope. **Cheap, and its value expires** the moment the box is built to a wider spec than it needed.
 
-**Needs a decision, not blocking**
+### Report-safety work — gates auto-send, not construction
 
-2. **Registrar availability API** for the no-website path and name-variant checks — still unchosen, so §5.1's no-website branch is not buildable. A contractor with no website at all is a real and valuable case, so this is worth closing before Piece 3 rather than after.
-3. **Record the third-party-content constraint in `AUTOMATION_PIPELINE_SPEC.md` §6** so the no-verbatim-quotes rule survives independently of this document. §2.5(a).
-4. **Add an `OWNER_NAME_LEAKED` check at `block` severity to `lib/report-precheck.js`.** Needs a per-job context argument, since an owner name has no detectable shape — the check is "does this draft contain *this job's* stored `owner_name` string." `FUNNEL_REORDER_SPEC.md` §3.2.
-5. **`REQUIRED_SECTIONS` vs. the opening section.** The proposed opening (§3) is deliberately not in the required list. Confirm that is intended rather than an omission.
+4. **`OWNER_NAME_LEAKED` check at `block` severity** in `lib/report-precheck.js`. Needs a per-job context argument, since an owner name has no detectable shape — the check is "does this draft contain *this job's* stored `owner_name` string." `FUNNEL_REORDER_SPEC.md` §3.2.
+5. **Checkpoint 4 verification generally** — three of the eight checks are `warn` rather than `block`, and the §1.5 accuracy-claim check is absent entirely. `FULFILLMENT_WORKER_SPEC.md` §7.6 step 4. **Must be genuinely done before any auto-send**, which is a later gate than Piece 3.
 
-**Already tracked elsewhere**
+### Documentation / confirmation
 
-6. Three of the eight Checkpoint 4 checks are `warn` rather than `block`, and the §1.5 accuracy-claim check is absent entirely. `FULFILLMENT_WORKER_SPEC.md` §4 / §7.6 step 4.
-7. `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 — corrected in place 2026-08-01 with a dated note. `FULFILLMENT_WORKER_SPEC.md` §8 register entries 1 and 5 remain **open**, correctly.
+6. **Record the third-party-content constraint in `AUTOMATION_PIPELINE_SPEC.md` §6** so the no-verbatim-quotes rule survives independently of this document. §2.5(a).
+7. **`REQUIRED_SECTIONS` vs. the opening section.** The proposed opening (§3) is deliberately not in the required list. Confirm intended rather than an omission.
+8. `AUTOMATION_PIPELINE_SPEC.md` §1 item 5 — corrected in place 2026-08-01. `FULFILLMENT_WORKER_SPEC.md` §8 register entries 1 and 5 remain **open**, correctly.
+
+### Deferred by decision
+
+9. **`serp/google/maps/live/advanced`** — local-finder depth instead of binary three-pack presence. Deferred for v1; revisit if reports read thin. `FULFILLMENT_WORKER_SPEC.md` §7.4.
+
+### Belongs to the pipeline, not this procedure — but lands during Piece 3
+
+10. **The `intent_*` timing race.** `checkout.session.completed` fires before the buyer fills the intake form, so the five steering fields **do not exist yet at webhook time**. The consumer must read them at research time, not from the queue message, and a slow typist can still lose them. `FULFILLMENT_WORKER_SPEC.md` §3.1. **This procedure consumes `intent_*` as steering input, so whoever wires the callers meets it.**
