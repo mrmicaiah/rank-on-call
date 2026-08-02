@@ -1,20 +1,27 @@
 /**
  * Tests for serp-parse.js — run with: npm test  (node --test src/*.test.js)
  *
- * ⚠️ These run against the REAL captured API response at
- * `worker/test/fixtures/serp-plumber-decatur.json`, not synthetic data.
+ * ⚠️ These run against REAL captured API responses, not synthetic data:
  *
- * That fixture was captured via the DataForSEO Playground, which unwraps the
- * envelope — so its top level IS a task object, which is exactly what parseSerp()
- * takes. It is fed straight in, with no wrapping. The envelope seam is covered
+ *   serp-plumber-decatur.json   STRONG performer — target #1 in the local pack
+ *                               and #1 organically. Proves extraction works.
+ *   serp-gutters-decatur.json   WEAK performer — target on page one but ABSENT
+ *                               from the local pack. Proves the headline finding.
+ *
+ * Both are kept deliberately; they cover opposite outcomes. See
+ * test/fixtures/README.md before consolidating anything.
+ *
+ * Both were captured via the DataForSEO Playground, which unwraps the envelope —
+ * so their top level IS a task object, which is exactly what parseSerp() takes.
+ * They are fed straight in, with no wrapping. The envelope seam is covered
  * separately in dataforseo.test.js.
  *
  * A hand-written fixture would encode my assumptions about the response shape and
  * then confirm them, which is worse than no test — the whole point is to find out
  * whether the parser survives what DataForSEO actually returns.
  *
- * If the fixture is absent every test here SKIPS with a visible reason rather than
- * passing vacuously.
+ * If a fixture is absent, the tests that need it SKIP with a visible reason rather
+ * than passing vacuously.
  */
 
 import { test } from "node:test";
@@ -23,19 +30,29 @@ import { readFileSync } from "node:fs";
 
 import { parseSerp, registrableDomain, LISTING_PLATFORMS } from "./serp-parse.js";
 
-const FIXTURE_URL = new URL("../test/fixtures/serp-plumber-decatur.json", import.meta.url);
-
-let fixture = null;
-let loadError = null;
-try {
-  fixture = JSON.parse(readFileSync(FIXTURE_URL, "utf8"));
-} catch (err) {
-  loadError = err.code === "ENOENT" ? "fixture not yet captured — see dispatch A" : `fixture unreadable: ${err.message}`;
+function loadFixture(name) {
+  try {
+    return { data: JSON.parse(readFileSync(new URL(`../test/fixtures/${name}`, import.meta.url), "utf8")), skip: null };
+  } catch (err) {
+    return {
+      data: null,
+      skip: err.code === "ENOENT" ? `${name} not yet captured` : `${name} unreadable: ${err.message}`,
+    };
+  }
 }
-const needsFixture = loadError ? { skip: loadError } : {};
 
-/* The buyer's own site in this fixture. */
+/* STRONG performer — target is #1 in the local pack and #1 organically. */
+const plumber = loadFixture("serp-plumber-decatur.json");
+const fixture = plumber.data;
+const needsFixture = plumber.skip ? { skip: plumber.skip } : {};
 const SCANNED_URL = "https://myaplumber.com/";
+
+/* WEAK performer — target is on page one but ABSENT from the local pack. This is
+   the shape the product exists to find; see test/fixtures/README.md. */
+const gutters = loadFixture("serp-gutters-decatur.json");
+const guttersFixture = gutters.data;
+const needsGutters = gutters.skip ? { skip: gutters.skip } : {};
+const GUTTERS_URL = "https://bettertongutters.com/";
 
 /* ========================================================================== *
  *  Domain normalization — no fixture needed
@@ -188,6 +205,55 @@ test("itemTypes is carried through as a page manifest", needsFixture, () => {
    the forbidden strings FROM the fixture rather than hardcoding them means this
    test keeps working if the fixture is ever recaptured, and it cannot be
    weakened by my not knowing what is in there. */
+/**
+ * ⚠️ Values that legitimately reach the output through an ALLOWLISTED field.
+ *
+ * Google's `highlighted` array is made of fragments OF the title and snippet, so a
+ * highlighted fragment can be a verbatim substring of a `title` the parser
+ * deliberately emits. When that happens the value arrived via `title` — which is on
+ * the allowlist and is not personal data — not via `highlighted`.
+ *
+ * Without this, the sweep reports a false positive on any such overlap. The gutters
+ * fixture has one: BBB's highlighted[0] is "Gutters near Decatur, AL", which is
+ * also a substring of its title "BBB Accredited Gutters near Decatur, AL | ...".
+ *
+ * This narrows the sweep, so it is worth being explicit that it does NOT weaken it:
+ * a forbidden value is still a leak unless some allowlisted source field contains
+ * it in full. The control test below proves the sweep can still fail.
+ */
+function allowlistedSourceText(task) {
+  const items = task?.result?.[0]?.items ?? [];
+  return items.flatMap((i) => [i.title, i.url, i.domain]).filter((v) => typeof v === "string");
+}
+
+/**
+ * ⚠️ Does `value` occur in the SERIALIZED output?
+ *
+ * A naive `serialized.includes(value)` misses multi-line values, and the local_pack
+ * descriptions — the ones carrying the verbatim review quotes — are all multi-line.
+ * `JSON.stringify` renders their newlines as an escaped `\n` and their inner quotes
+ * as `\"`, so the raw captured string is NOT a substring of the serialized output
+ * even when it leaked in full.
+ *
+ * Both forms are therefore checked. This was found by the control test below
+ * failing on a planted value that should have been caught — which is the entire
+ * reason the control exists.
+ */
+function occursIn(serialized, value) {
+  if (serialized.includes(value)) return true;
+  const escaped = JSON.stringify(value).slice(1, -1); // inner escaped form, no wrapping quotes
+  return serialized.includes(escaped);
+}
+
+/* Forbidden values that reached the output and are NOT explained by an allowlisted field. */
+function sweepForLeaks(task, serialized) {
+  const explained = allowlistedSourceText(task);
+  return collectForbiddenValues(task)
+    .filter((value) => value.length >= 8)
+    .filter((value) => occursIn(serialized, value))
+    .filter((value) => !explained.some((source) => source.includes(value)));
+}
+
 function collectForbiddenValues(node, out = []) {
   if (Array.isArray(node)) {
     for (const child of node) collectForbiddenValues(child, out);
@@ -211,10 +277,8 @@ test("⚠️ NO review quote, phone, or address from any forbidden field appears
   const out = parseSerp(fixture, { scannedUrl: SCANNED_URL });
   const serialized = JSON.stringify(out);
 
-  const forbidden = collectForbiddenValues(fixture);
-  assert.ok(forbidden.length > 0, "the fixture must actually contain forbidden fields, or this test proves nothing");
-
-  const leaked = forbidden.filter((value) => value.length >= 8 && serialized.includes(value));
+  assert.ok(collectForbiddenValues(fixture).length > 0, "the fixture must contain forbidden fields, or this proves nothing");
+  const leaked = sweepForLeaks(fixture, serialized);
   assert.deepEqual(leaked, [], `parser leaked forbidden content: ${JSON.stringify(leaked.slice(0, 3))}`);
 });
 
@@ -277,4 +341,138 @@ test("an empty or malformed body yields an honestly empty extraction, never a th
     assert.equal(out.targetOrganicRank, null);
     assert.deepEqual(out.itemTypes, []);
   }
+});
+
+/* ========================================================================== *
+ *  ⚠️ THE WEAK PERFORMER — target absent from the local pack
+ *
+ *  The strong-performer fixture proves extraction works. This one proves the
+ *  product's headline finding survives real data: a business on page one that is
+ *  invisible in the three-pack. Everything downstream depends on that shape being
+ *  a FINDING rather than a crash or a silence.
+ * ========================================================================== */
+
+test("⚠️ NOT IN THE THREE-PACK: targetInLocalPack is null while the target ranks organically", needsGutters, () => {
+  const out = parseSerp(guttersFixture, { scannedUrl: GUTTERS_URL });
+
+  // Strictly null. Not undefined (which reads as "we never looked"), not an empty
+  // object (which a truthiness check would treat as "found"), and not a throw.
+  // A consumer must be able to distinguish "absent from the pack" from "no data".
+  assert.strictEqual(out.targetInLocalPack, null, "must be exactly null");
+  assert.ok(!("rankGroup" in (out.targetInLocalPack ?? {})), "no partial object");
+
+  // …while the business is demonstrably present on the page.
+  assert.deepEqual(out.targetOrganicRank, { rankGroup: 5, rankAbsolute: 9 });
+});
+
+test("the local pack still extracts all three competitors when the target is absent from it", needsGutters, () => {
+  const out = parseSerp(guttersFixture, { scannedUrl: GUTTERS_URL });
+
+  assert.equal(out.localPack.length, 3);
+  assert.deepEqual(out.localPack.map((e) => e.rankAbsolute), [1, 2, 3]);
+  assert.deepEqual(out.localPack.map((e) => e.domain), [
+    "www.usaroofing.us",
+    "qualitychoice-roofing.com",
+    "www.offdutyguttersunlimitedllc.com",
+  ]);
+
+  // The target must not appear among them under any normalization.
+  const target = registrableDomain(GUTTERS_URL);
+  for (const entry of out.localPack) {
+    assert.notEqual(registrableDomain(entry.domain), target);
+  }
+});
+
+test("platformsFound picks up the real directories and nothing else", needsGutters, () => {
+  const out = parseSerp(guttersFixture, { scannedUrl: GUTTERS_URL });
+  const byName = Object.fromEntries(out.platformsFound.map((p) => [p.platform, p.rankAbsolute]));
+
+  assert.equal(byName.Yelp, 5);
+  assert.equal(byName.Facebook, 7);
+  assert.equal(byName.BBB, 13);
+
+  // ⚠️ A retailer, a national installer, a content site and a franchise all appear
+  // in this SERP. None is a listing platform, and reporting one as a "listing"
+  // would be a finding about nothing.
+  const domains = out.platformsFound.map((p) => p.domain);
+  for (const notAPlatform of ["lowes.com", "truteam.com", "ecowatch.com", "mrgutter.com"]) {
+    assert.ok(!domains.includes(notAPlatform), `${notAPlatform} is not a listing platform`);
+  }
+});
+
+test("⚠️ derived privacy sweep against the weak-performer fixture", needsGutters, () => {
+  const out = parseSerp(guttersFixture, { scannedUrl: GUTTERS_URL });
+  const serialized = JSON.stringify(out);
+
+  // Derived from the file, never hardcoded — so this keeps working if the fixture
+  // is ever recaptured, and cannot be weakened by not knowing what is in it.
+  assert.ok(collectForbiddenValues(guttersFixture).length > 0, "the fixture must contain forbidden fields, or this proves nothing");
+  const leaked = sweepForLeaks(guttersFixture, serialized);
+  assert.deepEqual(leaked, [], `parser leaked forbidden content: ${JSON.stringify(leaked.slice(0, 3))}`);
+});
+
+test("⚠️ the organic `links` sitelink array never reaches the output", needsGutters, () => {
+  // The plumber fixture had no `links` field anywhere, so the allowlist has never
+  // been tested against it. It is not personal data — it is a field the allowlist
+  // has simply never seen, which is exactly the case an allowlist exists for.
+  const raw = JSON.stringify(guttersFixture);
+  assert.ok(raw.includes('"links"'), "the fixture must actually contain a links array");
+
+  const out = parseSerp(guttersFixture, { scannedUrl: GUTTERS_URL });
+  assert.ok(!JSON.stringify(out).includes('"links"'), "links must not survive the allowlist");
+
+  for (const entry of out.organic) {
+    assert.deepEqual(Object.keys(entry).sort(), ["domain", "rankAbsolute", "rankGroup", "title", "url"]);
+  }
+});
+
+test("both fixtures parse with the same code path and disagree only where they should", needsFixture, () => {
+  if (gutters.skip) return; // needs both; the individual suites cover each alone.
+
+  const strong = parseSerp(fixture, { scannedUrl: SCANNED_URL });
+  const weak = parseSerp(guttersFixture, { scannedUrl: GUTTERS_URL });
+
+  // Same shape, opposite outcome — which is the entire reason both are kept.
+  assert.deepEqual(Object.keys(strong).sort(), Object.keys(weak).sort());
+  assert.ok(strong.targetInLocalPack, "strong performer is in the pack");
+  assert.equal(weak.targetInLocalPack, null, "weak performer is not");
+  assert.ok(strong.targetOrganicRank && weak.targetOrganicRank, "both rank organically");
+});
+
+test("⚠️ CONTROL: the narrowed privacy sweep can still detect a real leak", needsGutters, () => {
+  // A sweep that has been narrowed must prove it did not become unfalsifiable.
+  // Plant the ACTUAL forbidden values the parser withholds — not paraphrases of
+  // them — and the sweep has to catch every one.
+  const clean = JSON.stringify(parseSerp(guttersFixture, { scannedUrl: GUTTERS_URL }));
+  assert.deepEqual(sweepForLeaks(guttersFixture, clean), [], "the real output is clean");
+
+  const explained = allowlistedSourceText(guttersFixture);
+  const shouldNeverAppear = collectForbiddenValues(guttersFixture)
+    .filter((value) => value.length >= 8)
+    .filter((value) => !explained.some((source) => source.includes(value)));
+
+  assert.ok(shouldNeverAppear.length >= 10, `expected many unexplained forbidden values, got ${shouldNeverAppear.length}`);
+
+  for (const value of shouldNeverAppear) {
+    // Plant the value the way a real leak would appear — JSON-escaped inside the output.
+    const planted = `${clean}${JSON.stringify(value).slice(1, -1)}`;
+    const leaks = sweepForLeaks(guttersFixture, planted);
+    assert.ok(leaks.includes(value), `the sweep must catch a planted ${JSON.stringify(value.slice(0, 40))}…`);
+  }
+});
+
+test("⚠️ the sweep matches WHOLE captured values — a partial extraction would slip past", needsGutters, () => {
+  // Recording a known limitation rather than pretending it away. The sweep asks
+  // "did this exact captured value survive?", so a parser that emitted only the
+  // review quote pulled OUT of a local_pack description would not be caught by it.
+  // The allowlist is what prevents that; this sweep is the second line, not the first.
+  const clean = JSON.stringify(parseSerp(guttersFixture, { scannedUrl: GUTTERS_URL }));
+  const quoteFragment = "The crew was quick and the finished product looks great";
+
+  assert.ok(!clean.includes(quoteFragment), "the parser does not emit it — which is what actually protects us");
+  assert.deepEqual(
+    sweepForLeaks(guttersFixture, `${clean}"${quoteFragment}"`),
+    [],
+    "…but the sweep alone would not have caught a fragment, hence the allowlist"
+  );
 });

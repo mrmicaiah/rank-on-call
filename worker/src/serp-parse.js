@@ -197,6 +197,17 @@ export function parseSerp(task, { scannedUrl } = {}) {
   /* ------------------------------ organic ----------------------------- */
   // ALLOWLIST: rank_group, rank_absolute, domain, title, url.
   // NOT description, NOT highlighted — both carry addresses and phone numbers.
+  //
+  // ⚠️ `title` and `url` are allowlisted because a competitor cannot be identified
+  // without them — but they are NOT guaranteed clean. Google titles are whatever
+  // the page author wrote, and a page author will happily put a street address in
+  // one. The gutters fixture has a live example: the Lowe's result is titled
+  // "Gutter installation in Decatur, AL, 1641 BELTINE ROAD SW".
+  //
+  // So the §6 output lock cannot be satisfied here alone. **A title must never be
+  // printed verbatim in a report**, and Checkpoint 4's address/phone sweep has to
+  // run over the drafted text regardless of how clean this extraction looks.
+  // This is a boundary that reduces exposure; it is not the last one.
   const organic = items
     .filter((item) => item && item.type === "organic")
     .map((item) => ({
